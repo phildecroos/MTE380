@@ -9,12 +9,14 @@ const int STEER_MAX = MOTOR_STEER;
 
 // TODO - integrate this with calibration routine
 enum wood_rgb
-{   r_w = 1000,
-    g_w = 1000,
-    b_w = 500
+{
+  r_w = 1000,
+  g_w = 1000,
+  b_w = 500
 };
 
-void setup() {
+void setup()
+{
   Serial.begin(9600);
   Serial.println("Setting up...");
 
@@ -27,7 +29,8 @@ void setup() {
 }
 
 // TODO - set up overall control flow (only line following is here for now)
-void loop() {
+void loop()
+{
   // ultrasonic sensor and servo not added yet
   // int us_dist = read_ultrasonic();
   // Serial.println("Distance: "); Serial.println(us_dist);
@@ -39,13 +42,16 @@ void loop() {
   int R_error = (col_in.r_r - r_w) + (col_in.g_r - g_w) + (col_in.b_r - b_w);
 
   int steering;
-  if (R_error > (1.1 * L_error)) {
+  if (R_error > (1.1 * L_error))
+  {
     steering = 0.5 * STEER_MAX;
   }
-  else if (L_error > (1.1 * R_error)) {
+  else if (L_error > (1.1 * R_error))
+  {
     steering = 0.5 * STEER_MAX;
   }
-  else {
+  else
+  {
     steering = 0;
   }
 

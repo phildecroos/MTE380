@@ -12,7 +12,7 @@ PA8
 
 // TODO - find pins to use for all uses below, and specify here
 #define US_TRIGGER 10; // PWM?
-#define US_ECHO 11; // PWM?
+#define US_ECHO 11;    // PWM?
 
 #define SERVO 10; // PWM
 
