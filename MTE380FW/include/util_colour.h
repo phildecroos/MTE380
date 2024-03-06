@@ -61,7 +61,7 @@ ColourReading read_colour()
   tcs_left.getRawData(&r_left, &g_left, &b_left, &c_left);
   tcs_right.getRawData(&r_right, &g_right, &b_right, &c_right);
 
-  // // colorTemp = tcs.calculateColorTemperature(r, g, b);
+  // colorTemp = tcs.calculateColorTemperature(r, g, b);
   // colorTemp_left = tcs_left.calculateColorTemperature_dn40(r_left, g_left, b_left, c_left);
   // lux_left = tcs_left.calculateLux(r_left, g_left, b_left);
   // colorTemp_right = tcs_right.calculateColorTemperature_dn40(r_right, g_right, b_right, c_right);

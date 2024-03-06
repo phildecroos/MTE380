@@ -6,13 +6,14 @@
 
 const int SPEED = MOTOR_SPEED;
 const int STEER_MAX = MOTOR_STEER;
+const int THRESHOLD = COLOUR_THRESHOLD;
 
 // TODO - integrate this with calibration routine
 enum wood_rgb
 {
-  r_w = 1000,
-  g_w = 1000,
-  b_w = 500
+  r_w = 1625,
+  g_w = 1450,
+  b_w = 800
 };
 
 void setup()
@@ -20,10 +21,14 @@ void setup()
   Serial.begin(9600);
   Serial.println("Setting up...");
 
-  setup_ultrasonic();
-  setup_servo();
+  // setup_ultrasonic();
+  // Serial.println("Set up ultrasonic sensor");
+  // setup_servo();
+  // Serial.println("Set up servo motor");
   setup_motors();
+  Serial.println("Set up dc motors");
   setup_colour();
+  Serial.println("Set up colour sensors");
 
   Serial.println("Setup complete");
 }
@@ -31,29 +36,40 @@ void setup()
 // TODO - set up overall control flow (only line following is here for now)
 void loop()
 {
-  // ultrasonic sensor and servo not added yet
+  // // test using ultrasonic
   // int us_dist = read_ultrasonic();
-  // Serial.println("Distance: "); Serial.println(us_dist);
+  // Serial.println("US Distance: "); Serial.println(us_dist);
+
+  // // test using servo
   // move_servo(0);
 
+  // test using colour sensor
   ColourReading col_in = read_colour();
 
-  int L_error = (col_in.r_l - r_w) + (col_in.g_l - g_w) + (col_in.b_l - b_w);
-  int R_error = (col_in.r_r - r_w) + (col_in.g_r - g_w) + (col_in.b_r - b_w);
+  int L_error = abs((col_in.r_l - r_w) + (col_in.g_l - g_w) + (col_in.b_l - b_w));
+  int R_error = abs((col_in.r_r - r_w) + (col_in.g_r - g_w) + (col_in.b_r - b_w));
+
+  Serial.println("L error: ");
+  Serial.println(L_error);
+  Serial.println("R error: ");
+  Serial.println(R_error);
 
   int steering;
-  if (R_error > (1.1 * L_error))
+  if (R_error > (THRESHOLD * L_error))
   {
     steering = 0.5 * STEER_MAX;
   }
-  else if (L_error > (1.1 * R_error))
+  else if (L_error > (THRESHOLD * R_error))
   {
-    steering = 0.5 * STEER_MAX;
+    steering = -0.5 * STEER_MAX;
   }
   else
   {
     steering = 0;
   }
+
+  Serial.println("steering: ");
+  Serial.println(steering);
 
   drive_motors(true, steering, SPEED);
 }

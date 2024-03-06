@@ -2,26 +2,32 @@
 
 // Pin mapping
 
+// https://components101.com/sites/default/files/component_pin/STM32-Nucleo-F401RE-Pinout.png
+
 /*
 Pins used for colour sensors I2C:
-PB8
-PB9
-PC9
-PA8
+PB8 (I2C1_SCL)
+PB9 (I2C1_SDA)
+PA8 (I2C3_SCL)
+PC9 (I2C3_SDA)
 */
 
-// TODO - find pins to use for all uses below, and specify here
-#define US_TRIGGER 10; // PWM?
-#define US_ECHO 11;    // PWM?
+#define US_TRIGGER PA5;
+#define US_ECHO PA6;
 
-#define SERVO 10; // PWM
+#define START_BUTTON PB10;
 
-#define MOTOR_ENA_L 9; // PWM
-#define MOTOR_F_L 7;
-#define MOTOR_B_L 6;
-#define MOTOR_ENA_R 4; // PWM
-#define MOTOR_F_R 5;
-#define MOTOR_B_R 8;
+#define SERVO PB6; // PWM
 
-#define MOTOR_STEER 100; // granularity of steering inputs
-#define MOTOR_SPEED 200; // 0 to 255
+#define MOTOR_ENA_L PC7; // ENB (PWM)
+#define MOTOR_B_L PA7;   // IN3
+#define MOTOR_F_L PB5;   // IN4
+#define MOTOR_ENA_R PB4; // ENA (PWM)
+#define MOTOR_B_R PB3;   // IN2
+#define MOTOR_F_R PA9;   // IN1
+
+// Consts that control system behaviour
+
+#define COLOUR_THRESHOLD 1.25; // threshold to steer towards line
+#define MOTOR_STEER 10;        // granularity of steering inputs
+#define MOTOR_SPEED 100;       // 0 to 255

@@ -40,14 +40,24 @@ void drive_motors(bool follow, int steer, int speed)
       analogWrite(ena_l, speed);
       analogWrite(ena_r, speed);
     }
+    else if (steer == -1)
+    {
+      digitalWrite(for_l, LOW);
+      digitalWrite(back_l, HIGH);
+      digitalWrite(for_r, LOW);
+      digitalWrite(back_r, HIGH);
+
+      analogWrite(ena_l, speed);
+      analogWrite(ena_r, speed);
+    }
     else if (steer > 0)
     {
       analogWrite(ena_l, speed);
-      analogWrite(ena_r, (speed * (steer / steer_max)));
+      analogWrite(ena_r, 0); //(speed * (steer / steer_max)));
     }
     else
     {
-      analogWrite(ena_l, (speed * (steer / steer_max)));
+      analogWrite(ena_l, 0); //(speed * (steer / steer_max)));
       analogWrite(ena_r, speed);
     }
   }
