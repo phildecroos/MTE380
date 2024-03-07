@@ -32,7 +32,7 @@ void setup_colour()
 {
   if (tcs_left.begin())
   {
-    Serial.println("Found leftsensor");
+    Serial.println("Found left colour sensor");
   }
   else
   {
@@ -43,7 +43,7 @@ void setup_colour()
 
   if (tcs_right.begin(0x29, &Wire2))
   {
-    Serial.println("Found right sensor");
+    Serial.println("Found right colour sensor");
   }
   else
   {
@@ -53,6 +53,11 @@ void setup_colour()
   }
 }
 
+void shutdown_colour()
+{
+  // can't think of anything that needs to be shut down here
+}
+
 ColourReading read_colour()
 {
   uint16_t r_left, g_left, b_left, c_left, colorTemp_left, lux_left;
@@ -60,28 +65,6 @@ ColourReading read_colour()
 
   tcs_left.getRawData(&r_left, &g_left, &b_left, &c_left);
   tcs_right.getRawData(&r_right, &g_right, &b_right, &c_right);
-
-  // colorTemp = tcs.calculateColorTemperature(r, g, b);
-  // colorTemp_left = tcs_left.calculateColorTemperature_dn40(r_left, g_left, b_left, c_left);
-  // lux_left = tcs_left.calculateLux(r_left, g_left, b_left);
-  // colorTemp_right = tcs_right.calculateColorTemperature_dn40(r_right, g_right, b_right, c_right);
-  // lux_right = tcs_right.calculateLux(r_right, g_right, b_right);
-
-  // Serial.print("Color Temp Left: "); Serial.print(colorTemp_left, DEC); Serial.print(" K - ");
-  // Serial.print("Lux Left: "); Serial.print(lux_left, DEC); Serial.print(" - ");
-  // Serial.print("R Left: "); Serial.print(r_left, DEC); Serial.print(" ");
-  // Serial.print("G Left: "); Serial.print(g_left, DEC); Serial.print(" ");
-  // Serial.print("B Left: "); Serial.print(b_left, DEC); Serial.print(" ");
-  // Serial.print("C Left: "); Serial.print(c_left, DEC); Serial.print(" ");
-  // Serial.println(" ");
-
-  // Serial.print("Color Temp Right: "); Serial.print(colorTemp_right, DEC); Serial.print(" K - ");
-  // Serial.print("Lux Right: "); Serial.print(lux_right, DEC); Serial.print(" - ");
-  // Serial.print("R Right: "); Serial.print(r_right, DEC); Serial.print(" ");
-  // Serial.print("G Right: "); Serial.print(g_right, DEC); Serial.print(" ");
-  // Serial.print("B Right: "); Serial.print(b_right, DEC); Serial.print(" ");
-  // Serial.print("C Right: "); Serial.print(c_right, DEC); Serial.print(" ");
-  // Serial.println(" ");
 
   return ColourReading(r_left, g_left, b_left, r_right, g_right, b_right);
 }

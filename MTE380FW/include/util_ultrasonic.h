@@ -1,18 +1,22 @@
 #include <Arduino.h>
 #include "config.h"
 
+int trigger = US_TRIGGER;
+int echo = US_ECHO;
+
 void setup_ultrasonic()
 {
-  int trigger = US_TRIGGER;
-  int echo = US_ECHO;
   pinMode(trigger, OUTPUT);
   pinMode(echo, INPUT);
 }
 
+void shutdown_ultrasonic()
+{
+  digitalWrite(trigger, LOW);
+}
+
 int read_ultrasonic()
 {
-  int trigger = US_TRIGGER;
-  int echo = US_ECHO;
   long duration;
   int distance;
 

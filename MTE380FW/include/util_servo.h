@@ -2,15 +2,21 @@
 #include <Servo.h>
 #include "config.h"
 
+int pin = SERVO;
+int down = SERVO_DOWN;
+
 Servo myservo;
 
 void setup_servo()
 {
-  int pin = SERVO;
   myservo.attach(pin);
 }
 
-// TODO - add logic here to map inputs to up/down pos of gate
+void shutdown_servo()
+{
+  myservo.write(down);
+}
+
 void move_servo(int pos)
 {
   myservo.write(pos);
