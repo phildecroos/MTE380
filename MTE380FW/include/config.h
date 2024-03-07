@@ -12,6 +12,7 @@ PA8 (I2C3_SCL)
 PC9 (I2C3_SDA)
 */
 
+// TODO - validate ultrasonic and servo pin selections
 #define US_TRIGGER PA5;
 #define US_ECHO PA6;
 

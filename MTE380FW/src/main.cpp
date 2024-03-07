@@ -16,6 +16,7 @@ enum gears
   inplace = 2
 };
 
+// TODO - calibrate these enums to the values of the actual course
 enum red_rgb // apprx readings of colour sensors when fully on red line
 {
   r_r = 1400,
@@ -37,12 +38,7 @@ enum blue_rgb // apprx readings of colour sensors when fully on blue bullseye li
   b_b = 800
 };
 
-// TODO - make benchmark program to read each sensor, do each computation, and set each output as quickly as possible for n seconds & print results
-void roboBench()
-{
-}
-
-// TODO - make demo program to drive around, steer, and read sensors + print values
+// TODO - Demo program to show all functions
 void demoSupremo()
 {
 }
@@ -52,7 +48,7 @@ void calibr8()
 {
 }
 
-// TODO - make line following control algorithm here
+// Line following control algorithm (takes colour sensor reading & outputs steering)
 int hollowFollow(ColourReading col_in)
 {
   float L_error = abs((col_in.r_l - r_r) + (col_in.g_l - g_r) + (col_in.b_l - b_r));
@@ -81,9 +77,10 @@ int hollowFollow(ColourReading col_in)
   return steering;
 }
 
-// TODO - make line following program
+// Line following program
 void lineTime()
 {
+  // TODO - move while loop to main, have end condition handled separately from line following program
   while (1)
   {
     ColourReading col_in = read_colour();
@@ -146,7 +143,7 @@ void setup()
   Serial.println("Setup complete");
 }
 
-// TODO - set up overall control flow for total process
+// TODO - set up flow for overall process
 void loop()
 {
   lineTime();
