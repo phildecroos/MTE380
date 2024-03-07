@@ -63,15 +63,15 @@ int hollowFollow(ColourReading col_in)
   Serial.println("R error: ");
   Serial.println(R_error);
 
-  int threshold = 1.5;
+  int threshold = 1.3;
   int steering;
   if (R_error > (threshold * L_error))
   {
-    steering = -1 * (STEER_MAX - ((L_error / R_error) * STEER_MAX));
+    steering = 4; //(STEER_MAX - ((L_error / R_error) * STEER_MAX));
   }
   else if (L_error > (threshold * R_error))
   {
-    steering = (STEER_MAX - ((R_error / L_error) * STEER_MAX));
+    steering = -4; //-1 * (STEER_MAX - ((R_error / L_error) * STEER_MAX));
   }
   else
   {
