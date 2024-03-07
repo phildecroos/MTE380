@@ -16,115 +16,163 @@ enum gears
   inplace = 2
 };
 
+/*
+24ms
+
+gain 1x
+r 50
+g 12
+b 10
+
+gain 4x
+r 200
+g 47
+b 36
+
+gain 16x
+r 800
+g 190
+b 145
+
+gain 60x
+r 3100
+g 715
+b 550
+*/
+
 // TODO - calibrate these enums to the values of the actual course
-enum red_rgb // apprx readings of colour sensors when fully on red line
+const int K_P = 1;
+const int R_W_L = 1;
+const int G_W_L = 1;
+const int B_W_L = 1;
+const int R_W_R = 1;
+const int G_W_R = 1;
+const int B_W_R = 1;
+float max_diff = 0;
+
+enum red_rgb_r // apprx readings of colour sensors when fully on red line
 {
-  r_r = 1400,
-  g_r = 400,
-  b_r = 300
+  r_r_r = 810,
+  g_r_r = 210,
+  b_r_r = 150
 };
 
-enum green_rgb // apprx readings of colour sensors when fully on green safezone line
+enum red_rgb_l // apprx readings of colour sensors when fully on red line
 {
-  r_g = 1625,
-  g_g = 1450,
-  b_g = 800
-};
-
-enum blue_rgb // apprx readings of colour sensors when fully on blue bullseye line
-{
-  r_b = 1625,
-  g_b = 1450,
-  b_b = 800
+  r_r_l = 870,
+  g_r_l = 210,
+  b_r_l = 160
 };
 
 // TODO - Demo program to show all functions
-void demoSupremo()
+void demoRun()
 {
 }
 
 // TODO - make calibration route
-void calibr8()
+void readColours()
 {
+  ColourReading col_in = read_colour();
+
+  Serial.print("\n---------------------\n");
+
+  Serial.print("R Left: ");
+  Serial.print(col_in.r_l, DEC);
+  Serial.print(" ");
+  Serial.print("G Left: ");
+  Serial.print(col_in.g_l, DEC);
+  Serial.print(" ");
+  Serial.print("B Left: ");
+  Serial.print(col_in.b_l, DEC);
+  Serial.print(" ");
+  Serial.println(" ");
+
+  Serial.print("R Right: ");
+  Serial.print(col_in.r_r, DEC);
+  Serial.print(" ");
+  Serial.print("G Right: ");
+  Serial.print(col_in.g_r, DEC);
+  Serial.print(" ");
+  Serial.print("B Right: ");
+  Serial.print(col_in.b_r, DEC);
+  Serial.print(" ");
+  Serial.println(" ");
 }
 
 // Line following control algorithm (takes colour sensor reading & outputs steering)
-int hollowFollow(ColourReading col_in)
+float followAlgorithm(ColourReading col_in)
 {
-  float L_error = abs((col_in.r_l - r_r) + (col_in.g_l - g_r) + (col_in.b_l - b_r));
-  float R_error = abs((col_in.r_r - r_r) + (col_in.g_r - g_r) + (col_in.b_r - b_r));
+  float L_notred = abs(R_W_L * (col_in.r_l - r_r_l) + G_W_L * (col_in.g_l - g_r_l) + B_W_L * (col_in.b_l - b_r_l));
+  float R_notred = abs(R_W_R * (col_in.r_r - r_r_r) + G_W_R * (col_in.g_r - g_r_r) + B_W_R * (col_in.b_r - b_r_r));
+  float diff = L_notred - R_notred;
 
-  Serial.println("L error: ");
-  Serial.println(L_error);
-  Serial.println("R error: ");
-  Serial.println(R_error);
+  Serial.println("Diff: ");
+  Serial.println(diff);
 
-  int threshold = 1.3;
-  int steering;
-  if (R_error > (threshold * L_error))
-  {
-    steering = 4; //(STEER_MAX - ((L_error / R_error) * STEER_MAX));
-  }
-  else if (L_error > (threshold * R_error))
-  {
-    steering = -4; //-1 * (STEER_MAX - ((R_error / L_error) * STEER_MAX));
-  }
-  else
-  {
-    steering = 0;
-  }
+  float steering = (70.0 / 2500.0) * diff;
+  Serial.println("steering: ");
+  Serial.println(steering);
+
+  // int threshold = 1.3;
+  // int steering;
+  // if (R_error > (threshold * L_error))
+  // {
+  //   steering = -1 * (STEER_MAX - K_S * ((L_error / R_error) * STEER_MAX));
+  // }
+  // else if (L_error > (threshold * R_error))
+  // {
+  //   steering = (STEER_MAX - K_S * ((R_error / L_error) * STEER_MAX));
+  // }
+  // else
+  // {
+  //   steering = 0;
+  // }
 
   return steering;
 }
 
 // Line following program
-void lineTime()
+void lineFollow()
 {
-  // TODO - move while loop to main, have end condition handled separately from line following program
-  while (1)
-  {
-    ColourReading col_in = read_colour();
+  ColourReading col_in = read_colour();
 
-    Serial.print("\n---------------------\n");
+  Serial.print("\n---------------------\n");
 
-    // Serial.print("R Left: ");
-    // Serial.print(col_in.r_l, DEC);
-    // Serial.print(" ");
-    // Serial.print("G Left: ");
-    // Serial.print(col_in.g_l, DEC);
-    // Serial.print(" ");
-    // Serial.print("B Left: ");
-    // Serial.print(col_in.b_l, DEC);
-    // Serial.print(" ");
-    // Serial.println(" ");
+  Serial.print("R Left: ");
+  Serial.print(col_in.r_l, DEC);
+  Serial.print(" ");
+  Serial.print("G Left: ");
+  Serial.print(col_in.g_l, DEC);
+  Serial.print(" ");
+  Serial.print("B Left: ");
+  Serial.print(col_in.b_l, DEC);
+  Serial.print(" ");
+  Serial.println(" ");
 
-    // Serial.print("R Right: ");
-    // Serial.print(col_in.r_r, DEC);
-    // Serial.print(" ");
-    // Serial.print("G Right: ");
-    // Serial.print(col_in.g_r, DEC);
-    // Serial.print(" ");
-    // Serial.print("B Right: ");
-    // Serial.print(col_in.b_r, DEC);
-    // Serial.print(" ");
-    // Serial.println(" ");
+  Serial.print("R Right: ");
+  Serial.print(col_in.r_r, DEC);
+  Serial.print(" ");
+  Serial.print("G Right: ");
+  Serial.print(col_in.g_r, DEC);
+  Serial.print(" ");
+  Serial.print("B Right: ");
+  Serial.print(col_in.b_r, DEC);
+  Serial.print(" ");
+  Serial.println(" ");
 
-    int steering = hollowFollow(col_in);
-
-    Serial.println("steering: ");
-    Serial.println(steering);
-
-    drive_motors(forward, steering, SPEED);
-  }
+  int steering = followAlgorithm(col_in);
+  drive_motors(forward, steering, SPEED);
+  Serial.println("steering: ");
+  Serial.println(steering);
 }
 
 // TODO - make pickup routine here
-void poopNscoop()
+void pickUp()
 {
 }
 
 // TODO - make dropoff routine here
-void stopNdrop()
+void dropOff()
 {
 }
 
@@ -146,7 +194,10 @@ void setup()
 // TODO - set up flow for overall process
 void loop()
 {
-  lineTime();
+  while (1)
+  {
+    lineFollow();
+  }
 
   Serial.println("Shutting down...");
   shutdown_motors();
