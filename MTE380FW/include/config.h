@@ -30,8 +30,8 @@ PC9 (I2C3_SDA)
 // Consts that control system behaviour
 
 // TODO - test and update servo up and down input angles
-#define SERVO_UP 0;   // servo input angle for up position
-#define SERVO_DOWN 0; // servo input angle for down position
+#define SERVO_UP 180;   // servo input angle for up position
+#define SERVO_DOWN 80; // servo input angle for down position
 
-#define MOTOR_STEER 100;  // granularity of steering inputs
+#define MOTOR_STEER 100.0;  // granularity of steering inputs
 #define MOTOR_SPEED 100; // 0 to 255

@@ -64,12 +64,51 @@ enum red_rgb_l // apprx readings of colour sensors when fully on red line
   b_r_l = 160
 };
 
-// TODO - Demo program to show all functions
-void demoRun()
+// TODO - Demo program to show all driving functions
+void demoDrive()
 {
+  drive_motors(forward, 0, SPEED);
+  delay(3000);
+  drive_motors(reverse, 0, SPEED);
+  delay(3000);
+  drive_motors(forward, 40, SPEED);
+  delay(2000);
+  drive_motors(reverse, -40, SPEED);
+  delay(2000);
+  drive_motors(inplace, 100, SPEED);
+  delay(2000);
+  drive_motors(inplace, -100, SPEED);
+  delay(2000);
 }
 
-// TODO - make calibration route
+void demoGate() {
+  int pos = 0;
+  Serial.println("DOWN");
+  move_servo(DOWN);
+  while (1)
+  {
+    int us_reading = read_ultrasonic();
+    Serial.println("US Reading: ");
+    Serial.println(us_reading);
+    if (us_reading < 5)
+    {
+      if (pos == 0)
+      {
+        Serial.println("UP");
+        move_servo(UP);
+        pos = 1;
+      }
+      else
+      {
+        Serial.println("DOWN");
+        move_servo(DOWN);
+        pos = 0;
+      }
+      delay(1000);
+    }
+  }
+}
+
 void readColours()
 {
   ColourReading col_in = read_colour();
@@ -99,7 +138,7 @@ void readColours()
   Serial.println(" ");
 }
 
-// Line following control algorithm (takes colour sensor reading & outputs steering)
+// Line following control algorithm
 float followAlgorithm(ColourReading col_in)
 {
   float L_notred = abs(R_W_L * (col_in.r_l - r_r_l) + G_W_L * (col_in.g_l - g_r_l) + B_W_L * (col_in.b_l - b_r_l));
@@ -112,21 +151,6 @@ float followAlgorithm(ColourReading col_in)
   float steering = (70.0 / 2500.0) * diff;
   Serial.println("steering: ");
   Serial.println(steering);
-
-  // int threshold = 1.3;
-  // int steering;
-  // if (R_error > (threshold * L_error))
-  // {
-  //   steering = -1 * (STEER_MAX - K_S * ((L_error / R_error) * STEER_MAX));
-  // }
-  // else if (L_error > (threshold * R_error))
-  // {
-  //   steering = (STEER_MAX - K_S * ((R_error / L_error) * STEER_MAX));
-  // }
-  // else
-  // {
-  //   steering = 0;
-  // }
 
   return steering;
 }
@@ -166,12 +190,12 @@ void lineFollow()
   Serial.println(steering);
 }
 
-// TODO - make pickup routine here
+// TODO - make pickup routine
 void pickUp()
 {
 }
 
-// TODO - make dropoff routine here
+// TODO - make dropoff routine
 void dropOff()
 {
 }
@@ -194,10 +218,7 @@ void setup()
 // TODO - set up flow for overall process
 void loop()
 {
-  while (1)
-  {
-    lineFollow();
-  }
+  demoDrive();
 
   Serial.println("Shutting down...");
   shutdown_motors();
@@ -209,4 +230,7 @@ void loop()
   shutdown_ultrasonic();
   Serial.println("Shut down ultrasonic sensor");
   Serial.println("Shutdown complete");
+
+  while (1)
+    ;
 }

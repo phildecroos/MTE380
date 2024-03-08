@@ -9,6 +9,17 @@ int for_r = MOTOR_F_R;
 int back_r = MOTOR_B_R;
 float steer_max = MOTOR_STEER;
 
+float l_speed;
+float r_speed;
+
+// do not make any buffs > 1 or that wheel will drive faster than set speed
+const float INP_L_BUFF = 0.9;
+const float INP_R_BUFF = 1.0;
+const float FWD_L_BUFF = 0.9;
+const float FWD_R_BUFF = 1.0;
+const float REV_L_BUFF = 0.9;
+const float REV_R_BUFF = 1.0;
+
 void setup_motors()
 {
   pinMode(ena_l, OUTPUT);
@@ -58,67 +69,67 @@ speed
 
 void drive_motors(int gear, int steer, int speed)
 {
+  l_speed = 0;
+  r_speed = 0;
+
   if (gear == 2) // inplace
   {
+    Serial.println("Inplace");
+    l_speed =  abs(INP_L_BUFF * speed * (steer / steer_max));
+    r_speed =  abs(INP_R_BUFF * speed * (steer / steer_max));
+
     if (steer == 0) // sit still
     {
-      analogWrite(ena_l, 0);
-      analogWrite(ena_r, 0);
+      Serial.println("Stopped");
+      digitalWrite(for_l, LOW);
+      digitalWrite(back_l, LOW);
+      digitalWrite(for_r, LOW);
+      digitalWrite(back_r, LOW);
     }
     else if (steer > 0) // turn right (clockwise from top) in place
     {
+      Serial.println("Clockwise");
       digitalWrite(for_l, HIGH);
       digitalWrite(back_l, LOW);
       digitalWrite(for_r, LOW);
       digitalWrite(back_r, HIGH);
-      analogWrite(ena_l, (speed * (steer / steer_max)));
-      analogWrite(ena_r, (speed * (steer / steer_max)));
     }
     else // turn left (counter-clockwise from top) in place
     {
+      Serial.println("Counter-clockwise");
       digitalWrite(for_l, LOW);
       digitalWrite(back_l, HIGH);
       digitalWrite(for_r, HIGH);
       digitalWrite(back_r, LOW);
-      analogWrite(ena_l, (speed * (steer / steer_max)));
-      analogWrite(ena_r, (speed * (steer / steer_max)));
-
-      return;
     }
   }
   else if (gear == 0) // forward
   {
+    Serial.println("Forward");
     digitalWrite(for_l, HIGH);
     digitalWrite(back_l, LOW);
     digitalWrite(for_r, HIGH);
     digitalWrite(back_r, LOW);
-    float l_speed;
-    float r_speed;
 
     if (steer == 0) // drive straight
     {
-      l_speed = speed;
-      r_speed = speed;
+      l_speed = FWD_L_BUFF * speed;
+      r_speed = FWD_R_BUFF * speed;
     }
     else if (steer > 0) // steer right
     {
-      l_speed = speed;
-      r_speed = (speed * ((steer_max - steer) / steer_max));
+      l_speed = FWD_L_BUFF * speed;
+      r_speed = (FWD_R_BUFF * speed * ((steer_max - steer) / steer_max));
     }
     else // steer left
     {
-      l_speed = (speed * ((steer_max - abs(steer)) / steer_max));
-      r_speed = speed;
+      l_speed = (FWD_L_BUFF * speed * ((steer_max - abs(steer)) / steer_max));
+      r_speed = FWD_R_BUFF * speed;
     }
-    Serial.println("L speed: ");
-    Serial.println(l_speed);
-    Serial.println("R speed: ");
-    Serial.println(r_speed);
-    analogWrite(ena_l, l_speed);
-    analogWrite(ena_r, r_speed);
   }
   else if (gear == 1) // reverse
   {
+    Serial.println("Reverse");
     digitalWrite(for_l, LOW);
     digitalWrite(back_l, HIGH);
     digitalWrite(for_r, LOW);
@@ -126,23 +137,31 @@ void drive_motors(int gear, int steer, int speed)
 
     if (steer == 0) // drive straight
     {
-      analogWrite(ena_l, speed);
-      analogWrite(ena_r, speed);
+      l_speed = REV_L_BUFF * speed;
+      r_speed = REV_R_BUFF * speed;
     }
     else if (steer > 0) // steer right
     {
-      analogWrite(ena_l, speed);
-      analogWrite(ena_r, (speed * ((steer_max - steer) / steer_max)));
+      l_speed = REV_L_BUFF * speed;
+      r_speed = (REV_R_BUFF * speed * ((steer_max - steer) / steer_max));
     }
     else // steer left
     {
-      analogWrite(ena_l, (speed * ((steer_max - steer) / steer_max)));
-      analogWrite(ena_r, speed);
+      l_speed = (REV_L_BUFF * speed * ((steer_max - abs(steer)) / steer_max));
+      r_speed = REV_R_BUFF * speed;
     }
   }
   else
   {
     Serial.println("WARNING: Unknown gear value inputted: ");
     Serial.println(gear);
+    Serial.println("Stopping motors");
   }
+
+  Serial.println("L speed: ");
+  Serial.println(l_speed);
+  Serial.println("R speed: ");
+  Serial.println(r_speed);
+  analogWrite(ena_l, l_speed);
+  analogWrite(ena_r, r_speed);
 }

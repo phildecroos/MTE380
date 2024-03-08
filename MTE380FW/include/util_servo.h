@@ -10,6 +10,7 @@ Servo myservo;
 void setup_servo()
 {
   myservo.attach(pin);
+  myservo.write(down);
 }
 
 void shutdown_servo()
