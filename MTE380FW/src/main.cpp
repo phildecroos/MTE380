@@ -79,7 +79,21 @@ void demoDrive()
   delay(2000);
 }
 
-void demoGate() {
+void demoDriveToStop()
+{
+  drive_motors(forward, 0, SPEED);
+  int us_reading = 6;
+  while (us_reading > 5)
+  {
+    us_reading = read_ultrasonic();
+    Serial.println("US Reading: ");
+    Serial.println(us_reading);
+  }
+  drive_motors(forward, 0, 0);
+}
+
+void demoGate()
+{
   int pos = 0;
   Serial.println("DOWN");
   move_servo(DOWN);
@@ -237,7 +251,9 @@ void setup()
 // TODO - set up flow for overall process
 void loop()
 {
-  demoDrive();
+  // demoDrive();
+
+  // demoDriveToStop();
 
   // demoGate();
 
@@ -245,7 +261,7 @@ void loop()
   //   lineFollow();
   // }
 
-  // while(1)
+  // while (1)
   // {
   //   printCalibrationData();
   // }
