@@ -12,7 +12,6 @@ PA8 (I2C3_SCL)
 PC9 (I2C3_SDA)
 */
 
-// TODO - validate ultrasonic and servo pin selections
 #define US_TRIGGER PA5;
 #define US_ECHO PA6;
 
@@ -29,7 +28,6 @@ PC9 (I2C3_SDA)
 
 // Consts that control system behaviour
 
-// TODO - test and update servo up and down input angles
 #define SERVO_UP 180;   // servo input angle for up position
 #define SERVO_DOWN 80; // servo input angle for down position
 

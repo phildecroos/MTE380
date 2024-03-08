@@ -40,7 +40,6 @@ g 715
 b 550
 */
 
-// TODO - calibrate these enums to the values of the actual course
 const int K_P = 1;
 const int R_W_L = 1;
 const int G_W_L = 1;
@@ -50,21 +49,20 @@ const int G_W_R = 1;
 const int B_W_R = 1;
 float max_diff = 0;
 
-enum red_rgb_r // apprx readings of colour sensors when fully on red line
+enum red_rgb_r // apprx readings of right colour sensor when fully on red line
 {
   r_r_r = 810,
   g_r_r = 210,
   b_r_r = 150
 };
 
-enum red_rgb_l // apprx readings of colour sensors when fully on red line
+enum red_rgb_l // apprx readings of left colour sensor when fully on red line
 {
   r_r_l = 870,
   g_r_l = 210,
   b_r_l = 160
 };
 
-// TODO - Demo program to show all driving functions
 void demoDrive()
 {
   drive_motors(forward, 0, SPEED);
@@ -139,8 +137,10 @@ void readColours()
 }
 
 // Line following control algorithm
+// TODO - calibrate this to actually work
 float followAlgorithm(ColourReading col_in)
 {
+  // might need to try hue - or just tweak weights etc. until it works
   float L_notred = abs(R_W_L * (col_in.r_l - r_r_l) + G_W_L * (col_in.g_l - g_r_l) + B_W_L * (col_in.b_l - b_r_l));
   float R_notred = abs(R_W_R * (col_in.r_r - r_r_r) + G_W_R * (col_in.g_r - g_r_r) + B_W_R * (col_in.b_r - b_r_r));
   float diff = L_notred - R_notred;
