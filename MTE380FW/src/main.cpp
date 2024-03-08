@@ -107,6 +107,25 @@ void demoGate() {
   }
 }
 
+void printCalibrationData()
+{
+  ColourReading col_in = read_colour();
+
+  Serial.print(col_in.r_l);
+  Serial.print(",");
+  Serial.print(col_in.g_l);
+  Serial.print(",");
+  Serial.print(col_in.b_l);
+  Serial.print("\n");
+
+  // Serial.print(col_in.r_r);
+  // Serial.print(",");
+  // Serial.print(col_in.g_r);
+  // Serial.print(",");
+  // Serial.print(col_in.b_r);
+  // Serial.print("\n");
+}
+
 void readColours()
 {
   ColourReading col_in = read_colour();
@@ -219,6 +238,17 @@ void setup()
 void loop()
 {
   demoDrive();
+
+  // demoGate();
+
+  // while (1) {
+  //   lineFollow();
+  // }
+
+  // while(1)
+  // {
+  //   printCalibrationData();
+  // }
 
   Serial.println("Shutting down...");
   shutdown_motors();
