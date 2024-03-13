@@ -7,7 +7,8 @@
 const int UP = SERVO_UP;
 const int DOWN = SERVO_DOWN;
 const int SPEED = MOTOR_SPEED;
-const int STEER_MAX = MOTOR_STEER;
+const float STEER_MAX = MOTOR_STEER;
+const float MAX_LF_STEER = 1.0;
 
 enum gears
 {
@@ -15,39 +16,6 @@ enum gears
   reverse = 1,
   inplace = 2
 };
-
-/*
-24ms
-
-gain 1x
-r 50
-g 12
-b 10
-
-gain 4x
-r 200
-g 47
-b 36
-
-gain 16x
-r 800
-g 190
-b 145
-
-gain 60x
-r 3100
-g 715
-b 550
-*/
-
-const int K_P = 1;
-const int R_W_L = 1;
-const int G_W_L = 1;
-const int B_W_L = 1;
-const int R_W_R = 1;
-const int G_W_R = 1;
-const int B_W_R = 1;
-float max_diff = 0;
 
 enum red_rgb_r // apprx readings of right colour sensor when fully on red line
 {
@@ -62,6 +30,14 @@ enum red_rgb_l // apprx readings of left colour sensor when fully on red line
   g_r_l = 210,
   b_r_l = 160
 };
+
+const float MAX_READING = 1000.0;
+const int R_W_L = 1;
+const int G_W_L = 1;
+const int B_W_L = 1;
+const int R_W_R = 1;
+const int G_W_R = 1;
+const int B_W_R = 1;
 
 void demoDrive()
 {
@@ -169,19 +145,27 @@ void readColours()
   Serial.println(" ");
 }
 
-// Line following control algorithm
-// TODO - calibrate this to actually work
+// RGB weighted delta algorithm
 float followAlgorithm(ColourReading col_in)
 {
-  // might need to try hue - or just tweak weights etc. until it works
-  float L_notred = abs(R_W_L * (col_in.r_l - r_r_l) + G_W_L * (col_in.g_l - g_r_l) + B_W_L * (col_in.b_l - b_r_l));
-  float R_notred = abs(R_W_R * (col_in.r_r - r_r_r) + G_W_R * (col_in.g_r - g_r_r) + B_W_R * (col_in.b_r - b_r_r));
-  float diff = L_notred - R_notred;
+  float L_notred = abs((R_W_L * (col_in.r_l - r_r_l)) + (G_W_L * (col_in.g_l - g_r_l)) + (B_W_L * (col_in.b_l - b_r_l)));
+  float R_notred = abs((R_W_R * (col_in.r_r - r_r_r)) + (G_W_R * (col_in.g_r - g_r_r)) + (B_W_R * (col_in.b_r - b_r_r)));
+  float delta = L_notred - R_notred;
 
-  Serial.println("Diff: ");
-  Serial.println(diff);
+  Serial.println("Delta: ");
+  Serial.println(delta);
 
-  float steering = (70.0 / 2500.0) * diff;
+  float max_delta = 1;
+  if ((R_W_L + G_W_L + B_W_L) > (R_W_R + G_W_R + B_W_R))
+  {
+    max_delta = (R_W_L + G_W_L + B_W_L) * MAX_READING;
+  }
+  else
+  {
+    max_delta = (R_W_R + G_W_R + B_W_R) * MAX_READING;
+  }
+  float steering = ((STEER_MAX * MAX_LF_STEER) / max_delta) * delta;
+
   Serial.println("steering: ");
   Serial.println(steering);
 
@@ -251,20 +235,10 @@ void setup()
 // TODO - set up flow for overall process
 void loop()
 {
-  // demoDrive();
-
-  // demoDriveToStop();
-
-  // demoGate();
-
-  // while (1) {
-  //   lineFollow();
-  // }
-
-  // while (1)
-  // {
-  //   printCalibrationData();
-  // }
+  while (1)
+  {
+    lineFollow();
+  }
 
   Serial.println("Shutting down...");
   shutdown_motors();
