@@ -17,27 +17,11 @@ enum gears
   inplace = 2
 };
 
-enum red_rgb_r // apprx readings of right colour sensor when fully on red line
-{
-  r_r_r = 810,
-  g_r_r = 210,
-  b_r_r = 150
-};
-
-enum red_rgb_l // apprx readings of left colour sensor when fully on red line
-{
-  r_r_l = 870,
-  g_r_l = 210,
-  b_r_l = 160
-};
-
-const float MAX_READING = 1000.0;
-const int R_W_L = 1;
-const int G_W_L = 1;
-const int B_W_L = 1;
-const int R_W_R = 1;
-const int G_W_R = 1;
-const int B_W_R = 1;
+const float G_R_R = 170.0; // apprx readings of R/L colour sensors on red tape/wood
+const float G_W_R = 930.0;
+const float G_R_L = 170.0;
+const float G_W_L = 950.0;
+const float WEIGHTS[2] = {98.41, 101.59};
 
 void demoDrive()
 {
@@ -97,6 +81,38 @@ void demoGate()
   }
 }
 
+void demoPickDrop()
+{
+  Serial.println("UP");
+  move_servo(UP);
+  delay(500);
+
+  drive_motors(forward, 0, SPEED);
+  delay(1000);
+
+  drive_motors(reverse, 0, 0);
+  Serial.println("DOWN");
+  move_servo(DOWN);
+  delay(500);
+
+  drive_motors(reverse, 0, SPEED);
+  delay(1000);
+
+  drive_motors(reverse, 0, 0);
+  delay(1000);
+
+  drive_motors(forward, 0, SPEED);
+  delay(1000);
+
+  drive_motors(reverse, 0, 0);
+  Serial.println("UP");
+  move_servo(UP);
+  delay(500);
+
+  drive_motors(reverse, 0, SPEED);
+  delay(1000);
+}
+
 void printCalibrationData()
 {
   ColourReading col_in = read_colour();
@@ -145,66 +161,50 @@ void readColours()
   Serial.println(" ");
 }
 
-// RGB weighted delta algorithm
-float followAlgorithm(ColourReading col_in)
+float followAlgorithm(ColourReading col_in, float prev_steer)
 {
-  float L_notred = abs((R_W_L * (col_in.r_l - r_r_l)) + (G_W_L * (col_in.g_l - g_r_l)) + (B_W_L * (col_in.b_l - b_r_l)));
-  float R_notred = abs((R_W_R * (col_in.r_r - r_r_r)) + (G_W_R * (col_in.g_r - g_r_r)) + (B_W_R * (col_in.b_r - b_r_r)));
+  float L_notred = WEIGHTS[0] * abs(col_in.g_l - G_R_L);
+  float R_notred = WEIGHTS[1] * abs(col_in.g_r - G_R_R);
   float delta = L_notred - R_notred;
-
-  Serial.println("Delta: ");
-  Serial.println(delta);
-
-  float max_delta = 1;
-  if ((R_W_L + G_W_L + B_W_L) > (R_W_R + G_W_R + B_W_R))
+  float delta_ratio;
+  if (delta > 0)
   {
-    max_delta = (R_W_L + G_W_L + B_W_L) * MAX_READING;
+    delta_ratio = (delta / (WEIGHTS[0] * abs(G_W_L - G_R_L)));
   }
-  else
+  else if (delta < 0)
   {
-    max_delta = (R_W_R + G_W_R + B_W_R) * MAX_READING;
+    delta_ratio = (delta / (WEIGHTS[1] * abs(G_W_R - G_R_R)));
   }
-  float steering = ((STEER_MAX * MAX_LF_STEER) / max_delta) * delta;
 
-  Serial.println("steering: ");
+  float Kp = 1.0;
+  float steering = Kp * (STEER_MAX * MAX_LF_STEER) * delta_ratio;
+  Serial.println("P Control Steering: ");
   Serial.println(steering);
 
+  // float Kd = 0.1;
+  // if ((prev_steer * steering > 0.0) && (abs(prev_steer) > abs(steering)))
+  // {
+  //   if (steering > 0)
+  //     steering = steering - Kd * (abs(prev_steer) - abs(steering));
+  //   else if (steering < 0)
+  //     steering = steering + Kd * (abs(prev_steer) - abs(steering));
+  // }
+
+  if (steering > (STEER_MAX * MAX_LF_STEER))
+    steering = (STEER_MAX * MAX_LF_STEER);
+  else if (steering < (-1 * STEER_MAX * MAX_LF_STEER))
+    steering = (-1 * STEER_MAX * MAX_LF_STEER);
   return steering;
 }
 
-// Line following program
-void lineFollow()
+float lineFollow(float prev_steer)
 {
   ColourReading col_in = read_colour();
-
-  Serial.print("\n---------------------\n");
-
-  Serial.print("R Left: ");
-  Serial.print(col_in.r_l, DEC);
-  Serial.print(" ");
-  Serial.print("G Left: ");
-  Serial.print(col_in.g_l, DEC);
-  Serial.print(" ");
-  Serial.print("B Left: ");
-  Serial.print(col_in.b_l, DEC);
-  Serial.print(" ");
-  Serial.println(" ");
-
-  Serial.print("R Right: ");
-  Serial.print(col_in.r_r, DEC);
-  Serial.print(" ");
-  Serial.print("G Right: ");
-  Serial.print(col_in.g_r, DEC);
-  Serial.print(" ");
-  Serial.print("B Right: ");
-  Serial.print(col_in.b_r, DEC);
-  Serial.print(" ");
-  Serial.println(" ");
-
-  int steering = followAlgorithm(col_in);
-  drive_motors(forward, steering, SPEED);
-  Serial.println("steering: ");
+  float steering = followAlgorithm(col_in, prev_steer);
+  Serial.println("Steering: ");
   Serial.println(steering);
+  drive_motors(forward, steering, SPEED);
+  return steering;
 }
 
 // TODO - make pickup routine
@@ -235,9 +235,10 @@ void setup()
 // TODO - set up flow for overall process
 void loop()
 {
+  float prev_steer = 0;
   while (1)
   {
-    lineFollow();
+  prev_steer = lineFollow(prev_steer);
   }
 
   Serial.println("Shutting down...");
