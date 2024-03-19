@@ -17,7 +17,7 @@ enum gears
   inplace = 2
 };
 
-const float G_R_R = 170.0; // apprx readings of R/L colour sensors on red tape/wood
+const float G_R_R = 170.0; // apprx green readings of R/L colour sensors on red tape/wood
 const float G_W_R = 930.0;
 const float G_R_L = 170.0;
 const float G_W_L = 950.0;
@@ -29,14 +29,14 @@ void demoDrive()
   delay(3000);
   drive_motors(reverse, 0, SPEED);
   delay(3000);
-  drive_motors(forward, 40, SPEED);
-  delay(2000);
-  drive_motors(reverse, -40, SPEED);
-  delay(2000);
-  drive_motors(inplace, 100, SPEED);
-  delay(2000);
-  drive_motors(inplace, -100, SPEED);
-  delay(2000);
+  // drive_motors(forward, 40, SPEED);
+  // delay(2000);
+  // drive_motors(reverse, -40, SPEED);
+  // delay(2000);
+  // drive_motors(inplace, 100, SPEED);
+  // delay(2000);
+  // drive_motors(inplace, -100, SPEED);
+  // delay(2000);
 }
 
 void demoDriveToStop()
@@ -223,8 +223,8 @@ void setup()
   Serial.println("Setting up...");
   setup_ultrasonic();
   Serial.println("Set up ultrasonic sensor");
-  setup_servo();
-  Serial.println("Set up servo motor");
+  // setup_servo();
+  // Serial.println("Set up servo motor");
   setup_motors();
   Serial.println("Set up dc motors");
   setup_colour();
@@ -235,17 +235,18 @@ void setup()
 // TODO - set up flow for overall process
 void loop()
 {
-  float prev_steer = 0;
+  // float prev_steer = 0;
   while (1)
   {
-  prev_steer = lineFollow(prev_steer);
+  // prev_steer = lineFollow(prev_steer);
+  demoDrive();
   }
 
   Serial.println("Shutting down...");
   shutdown_motors();
   Serial.println("Shut down dc motors");
-  shutdown_servo();
-  Serial.println("Shut down servo motor");
+  // shutdown_servo();
+  // Serial.println("Shut down servo motor");
   shutdown_colour();
   Serial.println("Shut down colour sensors");
   shutdown_ultrasonic();

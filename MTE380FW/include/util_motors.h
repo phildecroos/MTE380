@@ -1,12 +1,11 @@
 #include <Arduino.h>
 #include "config.h"
 
+int mode = MOTOR_MODE;
 int ena_l = MOTOR_ENA_L;
-int for_l = MOTOR_F_L;
-int back_l = MOTOR_B_L;
+int dir_l = MOTOR_L;
 int ena_r = MOTOR_ENA_R;
-int for_r = MOTOR_F_R;
-int back_r = MOTOR_B_R;
+int dir_r = MOTOR_R;
 float steer_max = MOTOR_STEER;
 
 float l_speed;
@@ -22,29 +21,26 @@ const float REV_R_BUFF = 1.0;
 
 void setup_motors()
 {
+  pinMode(mode, OUTPUT);
   pinMode(ena_l, OUTPUT);
-  pinMode(for_l, OUTPUT);
-  pinMode(back_l, OUTPUT);
+  pinMode(dir_l, OUTPUT);
   pinMode(ena_r, OUTPUT);
-  pinMode(for_r, OUTPUT);
-  pinMode(back_r, OUTPUT);
+  pinMode(dir_r, OUTPUT);
 
+  digitalWrite(mode, HIGH);
   analogWrite(ena_l, 0);
   analogWrite(ena_r, 0);
-  digitalWrite(for_l, LOW);
-  digitalWrite(back_l, LOW);
-  digitalWrite(for_r, LOW);
-  digitalWrite(back_r, LOW);
+  digitalWrite(dir_l, LOW);
+  digitalWrite(dir_r, LOW);
 }
 
 void shutdown_motors()
 {
+  digitalWrite(mode, LOW);
   analogWrite(ena_l, 0);
   analogWrite(ena_r, 0);
-  digitalWrite(for_l, LOW);
-  digitalWrite(back_l, LOW);
-  digitalWrite(for_r, LOW);
-  digitalWrite(back_r, LOW);
+  digitalWrite(dir_l, LOW);
+  digitalWrite(dir_r, LOW);
 }
 
 /*
@@ -81,35 +77,27 @@ void drive_motors(int gear, int steer, int speed)
     if (steer == 0) // sit still
     {
       Serial.println("Stopped");
-      digitalWrite(for_l, LOW);
-      digitalWrite(back_l, LOW);
-      digitalWrite(for_r, LOW);
-      digitalWrite(back_r, LOW);
+      digitalWrite(dir_l, LOW);
+      digitalWrite(dir_r, LOW);
     }
     else if (steer > 0) // turn right (clockwise from top) in place
     {
       Serial.println("Clockwise");
-      digitalWrite(for_l, HIGH);
-      digitalWrite(back_l, LOW);
-      digitalWrite(for_r, LOW);
-      digitalWrite(back_r, HIGH);
+      digitalWrite(dir_l, HIGH);
+      digitalWrite(dir_r, LOW);
     }
     else // turn left (counter-clockwise from top) in place
     {
       Serial.println("Counter-clockwise");
-      digitalWrite(for_l, LOW);
-      digitalWrite(back_l, HIGH);
-      digitalWrite(for_r, HIGH);
-      digitalWrite(back_r, LOW);
+      digitalWrite(dir_l, LOW);
+      digitalWrite(dir_r, HIGH);
     }
   }
   else if (gear == 0) // forward
   {
     Serial.println("Forward");
-    digitalWrite(for_l, HIGH);
-    digitalWrite(back_l, LOW);
-    digitalWrite(for_r, HIGH);
-    digitalWrite(back_r, LOW);
+    digitalWrite(dir_l, HIGH);
+    digitalWrite(dir_r, HIGH);
 
     if (steer == 0) // drive straight
     {
@@ -130,10 +118,8 @@ void drive_motors(int gear, int steer, int speed)
   else if (gear == 1) // reverse
   {
     Serial.println("Reverse");
-    digitalWrite(for_l, LOW);
-    digitalWrite(back_l, HIGH);
-    digitalWrite(for_r, LOW);
-    digitalWrite(back_r, HIGH);
+    digitalWrite(dir_l, LOW);
+    digitalWrite(dir_r, LOW);
 
     if (steer == 0) // drive straight
     {
