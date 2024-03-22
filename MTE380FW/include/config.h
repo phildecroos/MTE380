@@ -15,15 +15,13 @@ PC9 (I2C3_SDA)
 #define US_TRIGGER PA5;
 #define US_ECHO PA6;
 
-#define START_BUTTON PB10;
-
 #define SERVO PB6; // PWM
 
 #define MOTOR_MODE PB3;  // MODE
-#define MOTOR_ENA_L PB4; // ENB (PWM)
-#define MOTOR_L PB5;     // INB
-#define MOTOR_ENA_R PC7; // ENA (PWM)
-#define MOTOR_R PA9;     // INA
+#define MOTOR_ENA_L PC7 // PB4; // ENB (PWM)
+#define MOTOR_DIR_L PA9 // PB5; // INB
+#define MOTOR_ENA_R PB4 // PC7; // ENA (PWM)
+#define MOTOR_DIR_R PB5 // PA9; // INA
 
 // Consts that control system behaviour
 
@@ -31,4 +29,4 @@ PC9 (I2C3_SDA)
 #define SERVO_DOWN 80; // servo input angle for down position
 
 #define MOTOR_STEER 100.0; // granularity of steering inputs
-#define MOTOR_SPEED 100;   // 0 to 255
+#define MOTOR_SPEED 200;   // 0 to 255

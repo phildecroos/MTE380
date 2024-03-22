@@ -3,20 +3,20 @@
 
 int mode = MOTOR_MODE;
 int ena_l = MOTOR_ENA_L;
-int dir_l = MOTOR_L;
+int dir_l = MOTOR_DIR_L;
 int ena_r = MOTOR_ENA_R;
-int dir_r = MOTOR_R;
+int dir_r = MOTOR_DIR_R;
 float steer_max = MOTOR_STEER;
 
 float l_speed;
 float r_speed;
 
 // do not make any buffs > 1 or that wheel will drive faster than set speed
-const float INP_L_BUFF = 0.9;
+const float INP_L_BUFF = 1.0;
 const float INP_R_BUFF = 1.0;
 const float FWD_L_BUFF = 0.9;
 const float FWD_R_BUFF = 1.0;
-const float REV_L_BUFF = 0.9;
+const float REV_L_BUFF = 1.0;
 const float REV_R_BUFF = 1.0;
 
 void setup_motors()
@@ -77,26 +77,26 @@ void drive_motors(int gear, int steer, int speed)
     if (steer == 0) // sit still
     {
       Serial.println("Stopped");
-      digitalWrite(dir_l, LOW);
-      digitalWrite(dir_r, LOW);
+      l_speed =  0;
+      r_speed =  0;
     }
     else if (steer > 0) // turn right (clockwise from top) in place
     {
       Serial.println("Clockwise");
-      digitalWrite(dir_l, HIGH);
+      digitalWrite(dir_l, LOW);
       digitalWrite(dir_r, LOW);
     }
     else // turn left (counter-clockwise from top) in place
     {
       Serial.println("Counter-clockwise");
-      digitalWrite(dir_l, LOW);
+      digitalWrite(dir_l, HIGH);
       digitalWrite(dir_r, HIGH);
     }
   }
   else if (gear == 0) // forward
   {
-    Serial.println("Forward");
-    digitalWrite(dir_l, HIGH);
+    // Serial.println("Forward");
+    digitalWrite(dir_l, LOW);
     digitalWrite(dir_r, HIGH);
 
     if (steer == 0) // drive straight
@@ -106,19 +106,19 @@ void drive_motors(int gear, int steer, int speed)
     }
     else if (steer > 0) // steer right
     {
-      l_speed = FWD_L_BUFF * speed;
-      r_speed = (FWD_R_BUFF * speed * ((steer_max - steer) / steer_max));
+      l_speed = FWD_L_BUFF * speed; // * (1 + abs(steer)/steer_max);
+      r_speed = FWD_R_BUFF * speed * (1 - abs(steer)/steer_max);
     }
     else // steer left
     {
-      l_speed = (FWD_L_BUFF * speed * ((steer_max - abs(steer)) / steer_max));
-      r_speed = FWD_R_BUFF * speed;
+      l_speed = FWD_L_BUFF * speed * (1 - abs(steer)/steer_max);
+      r_speed = FWD_R_BUFF * speed; // * (1 + abs(steer)/steer_max);
     }
   }
   else if (gear == 1) // reverse
   {
     Serial.println("Reverse");
-    digitalWrite(dir_l, LOW);
+    digitalWrite(dir_l, HIGH);
     digitalWrite(dir_r, LOW);
 
     if (steer == 0) // drive straight
@@ -129,11 +129,11 @@ void drive_motors(int gear, int steer, int speed)
     else if (steer > 0) // steer right
     {
       l_speed = REV_L_BUFF * speed;
-      r_speed = (REV_R_BUFF * speed * ((steer_max - steer) / steer_max));
+      r_speed = REV_R_BUFF * speed * (1 - abs(steer)/steer_max);
     }
     else // steer left
     {
-      l_speed = (REV_L_BUFF * speed * ((steer_max - abs(steer)) / steer_max));
+      l_speed = REV_L_BUFF * speed * (1 - abs(steer)/steer_max);
       r_speed = REV_R_BUFF * speed;
     }
   }
@@ -144,10 +144,19 @@ void drive_motors(int gear, int steer, int speed)
     Serial.println("Stopping motors");
   }
 
-  Serial.println("L speed: ");
-  Serial.println(l_speed);
-  Serial.println("R speed: ");
-  Serial.println(r_speed);
+  // Serial.println("L speed: ");
+  // Serial.println(l_speed);
+  // Serial.println("R speed: ");
+  // Serial.println(r_speed);
+  if (l_speed < 0)
+    l_speed = 0;
+  else if (l_speed > 255)
+    l_speed = 255;
+  if (r_speed < 0)
+    r_speed = 0;
+  else if (r_speed > 255)
+    r_speed = 255;
+
   analogWrite(ena_l, l_speed);
   analogWrite(ena_r, r_speed);
 }
