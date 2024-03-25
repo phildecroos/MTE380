@@ -11,7 +11,7 @@ float steer_max = MOTOR_STEER;
 float l_speed;
 float r_speed;
 
-// do not make any buffs > 1 or that wheel will drive faster than set speed
+// all speed buffs must be 0 to 1
 const float INP_L_BUFF = 1.0;
 const float INP_R_BUFF = 1.0;
 const float FWD_L_BUFF = 0.9;
@@ -63,6 +63,7 @@ speed
 - regardless of gear & steer, inputting speed==0 will stop the robot
 */
 
+// TODO - update steering to some form of speed up & slow down combo, maybe even reverse slowed wheel
 void drive_motors(int gear, int steer, int speed)
 {
   l_speed = 0;
@@ -144,10 +145,7 @@ void drive_motors(int gear, int steer, int speed)
     Serial.println("Stopping motors");
   }
 
-  // Serial.println("L speed: ");
-  // Serial.println(l_speed);
-  // Serial.println("R speed: ");
-  // Serial.println(r_speed);
+  // confirm no speeds exceed bounds
   if (l_speed < 0)
     l_speed = 0;
   else if (l_speed > 255)

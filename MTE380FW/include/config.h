@@ -1,7 +1,5 @@
 #include "Adafruit_TCS34725.h"
 
-// Pin mapping
-
 // https://components101.com/sites/default/files/component_pin/STM32-Nucleo-F401RE-Pinout.png
 
 /*
@@ -17,13 +15,11 @@ PC9 (I2C3_SDA)
 
 #define SERVO PB6; // PWM
 
-#define MOTOR_MODE PB3;  // MODE
-#define MOTOR_ENA_L PC7 // PB4; // ENB (PWM)
-#define MOTOR_DIR_L PA9 // PB5; // INB
-#define MOTOR_ENA_R PB4 // PC7; // ENA (PWM)
-#define MOTOR_DIR_R PB5 // PA9; // INA
-
-// Consts that control system behaviour
+#define MOTOR_MODE PB3; // MODE
+#define MOTOR_ENA_L PC7 // ENB (PWM)
+#define MOTOR_DIR_L PA9 // INB
+#define MOTOR_ENA_R PB4 // ENA (PWM)
+#define MOTOR_DIR_R PB5 // INA
 
 #define SERVO_UP 180;  // servo input angle for up position
 #define SERVO_DOWN 80; // servo input angle for down position
