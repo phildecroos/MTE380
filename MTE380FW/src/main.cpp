@@ -25,29 +25,22 @@ enum lf_exit_cases
 };
 
 // TODO - update needed values to use R,G,B not just one of them
-const float G_R_R = 90.0;  // calibrated green reading for right sensor on tape
-const float G_W_R = 500.0; // calibrated green reading for right sensor on wood
+const float G_R_R = 85.0;  // calibrated green reading for right sensor on tape
+const float G_W_R = 400.0; // calibrated green reading for right sensor on wood
 const float B_B_R = 190.0; // calibrated green reading for right sensor on blue (bullseye)
-const float G_R_L = 90.0;  // calibrated green reading for left sensor on tape
-const float G_W_L = 500.0; // calibrated green reading for left sensor on wood
+const float G_R_L = 95.0;  // calibrated green reading for left sensor on tape
+const float G_W_L = 450.0; // calibrated green reading for left sensor on wood
 const float B_B_L = 190.0; // calibrated green reading for left sensor on blue (bullseye)
 const float WEIGHTS[2] = {1.0, 1.0};
 
 void demoDrive()
 {
+  drive_motors(forward, 100, DRIVE_SPEED);
+  delay(2000);
   drive_motors(forward, 0, DRIVE_SPEED);
-  // delay(3000);
-  // drive_motors(reverse, 0, DRIVE_SPEED);
-  // delay(3000);
-  // drive_motors(forward, 0, 0);
-  // drive_motors(forward, 40, DRIVE_SPEED);
-  // delay(2000);
-  // drive_motors(reverse, -40, DRIVE_SPEED);
-  // delay(2000);
-  // drive_motors(inplace, 100, DRIVE_SPEED);
-  // delay(2000);
-  // drive_motors(inplace, -100, DRIVE_SPEED);
-  // delay(2000);
+  delay(2000);
+  drive_motors(forward, -100, DRIVE_SPEED);
+  delay(2000);
 }
 
 void demoDriveToStop()
@@ -128,26 +121,26 @@ void printCalibrationData()
 {
   ColourReading col_in = read_colour();
 
-  // Serial.print(col_in.g_l);
-  // Serial.print(",");
-  // Serial.print(col_in.g_r);
-  // Serial.print("\n");
-
-  Serial.print("Left:");
-  Serial.print(col_in.r_l);
-  Serial.print(",");
   Serial.print(col_in.g_l);
   Serial.print(",");
-  Serial.print(col_in.b_l);
+  Serial.print(col_in.g_r);
   Serial.print("\n");
 
-  Serial.print("Right:");
-  Serial.print(col_in.r_r);
-  Serial.print(",");
-  Serial.print(col_in.g_r);
-  Serial.print(",");
-  Serial.print(col_in.b_r);
-  Serial.print("\n");
+  // Serial.print("Left:");
+  // Serial.print(col_in.r_l);
+  // Serial.print(",");
+  // Serial.print(col_in.g_l);
+  // Serial.print(",");
+  // Serial.print(col_in.b_l);
+  // Serial.print("\n");
+
+  // Serial.print("Right:");
+  // Serial.print(col_in.r_r);
+  // Serial.print(",");
+  // Serial.print(col_in.g_r);
+  // Serial.print(",");
+  // Serial.print(col_in.b_r);
+  // Serial.print("\n");
 
   delay(500);
 }
@@ -184,8 +177,8 @@ void printColours()
 float followAlgorithm(int exit_case, ColourReading col_in, float prev_steer)
 {
   // return (STEER_RESOLUTION + 1) if exit_case is met
-  if ((exit_case == bullseye) && ((col_in.b_l > B_B_L) && (col_in.b_r > B_B_R)))
-    return STEER_RESOLUTION + 1;
+  // if ((exit_case == bullseye) && ((col_in.b_l > B_B_L) && (col_in.b_r > B_B_R)))
+  //   return STEER_RESOLUTION + 1;
   // TODO - add checks for other exit cases
 
   // calculate error function (0 to 1, sign of delta is steer direction)
@@ -199,19 +192,24 @@ float followAlgorithm(int exit_case, ColourReading col_in, float prev_steer)
     delta_ratio = abs(delta / (WEIGHTS[1] * abs(G_W_R - G_R_R)));
   if (delta_ratio > 1.0)
     delta_ratio = 1.0;
-  // TODO - could add dead zone here where small enough delta_ratios are just forced to zero to increase dampening
+  // if (delta_ratio < 0.10)
+  //   delta_ratio = 0.0;
 
   // determine gains
   // TODO - tune this for updated steering method & to dial in turning
-  float Kp = 0.5;
-  float Kd = 3.0;
-  if (delta_ratio > 0.30)
-    Kp = 3 * pow(delta_ratio, 1);
+  float Kp = 0.25;
+  float Kd_dn = 4.0;
+  float Kd_up = 1.0;
+  // if (delta_ratio > 0.40)
+  //   Kp = 3.0 * pow(delta_ratio, 2);
+  // Serial.print(delta_ratio);
 
   // calculate steering amount
-  float steering = Kp * (STEER_RESOLUTION * MAX_LF_STEER);
+  float steering = Kp * (STEER_RESOLUTION * MAX_LF_STEER) * delta_ratio;
   if ((prev_steer * delta > 0.0) && (abs(prev_steer) > steering))
-    steering = steering - Kd * (abs(prev_steer) - steering);
+    steering = prev_steer - Kd_dn * (abs(prev_steer) - steering);
+  else if ((prev_steer * delta > 0.0) && (steering > abs(prev_steer)))
+    steering = prev_steer + Kd_up * (steering - abs(prev_steer));
   if (steering < 0.0)
     steering = 0.0;
   if (delta < 0.0)
@@ -219,9 +217,9 @@ float followAlgorithm(int exit_case, ColourReading col_in, float prev_steer)
 
   // confirm that steering doesnt exceed bounds
   if (steering > (STEER_RESOLUTION * MAX_LF_STEER))
-    steering = (STEER_RESOLUTION * MAX_LF_STEER);
+    steering = STEER_RESOLUTION * MAX_LF_STEER;
   else if (steering < (-1 * STEER_RESOLUTION * MAX_LF_STEER))
-    steering = (-1 * STEER_RESOLUTION * MAX_LF_STEER);
+    steering = -1 * STEER_RESOLUTION * MAX_LF_STEER;
   return steering;
 }
 
@@ -230,13 +228,12 @@ float lineFollow(int exit_case, float prev_steer)
   // read colour sensors and calculat steering amount
   ColourReading col_in = read_colour();
   float steering = followAlgorithm(exit_case, col_in, prev_steer);
+  // Serial.print(steering);
   // stop line following if exit case is met
-  if (steering == STEER_RESOLUTION + 1)
+  if (steering == (STEER_RESOLUTION + 1))
     return STEER_RESOLUTION + 1;
-  // throttle speed during sharp turns
-  float speed = DRIVE_SPEED;
-  if (abs(steering) > (0.8 * (STEER_RESOLUTION * MAX_LF_STEER)))
-    speed = 0.7 * speed;
+  // throttle the speed according to how sharp the turn is
+  float speed = DRIVE_SPEED * (1 - 0.5 * (abs(steering) / (STEER_RESOLUTION * MAX_LF_STEER)));
   // run motors at calculated steering and speed
   drive_motors(forward, steering, speed);
   return steering;
@@ -270,11 +267,16 @@ void setup()
 // TODO - set up flow for overall process - currently just line follows and stops at bullseye
 void loop()
 {
+  // while (1)
+  // {
+  //   printCalibrationData();
+  // }
+
   float prev_steer = 0;
   while (1)
   {
     prev_steer = lineFollow(bullseye, prev_steer);
-    if (prev_steer == -1)
+    if (prev_steer == (STEER_RESOLUTION + 1))
       break;
   }
   drive_motors(reverse, 0, 50);
