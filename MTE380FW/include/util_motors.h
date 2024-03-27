@@ -7,18 +7,18 @@ int dir_l = MOTOR_DIR_L;
 int ena_r = MOTOR_ENA_R;
 int dir_r = MOTOR_DIR_R;
 float steer_max = MOTOR_STEER;
-const float REV_MAX = -30.0;
+const float REV_MAX = -0.0;
 
 float l_speed;
 float r_speed;
 
 // all speed buffs must be 0 to 1
-const float INP_L_BUFF = 1.0;
-const float INP_R_BUFF = 1.0;
-const float FWD_L_BUFF = 0.9;
-const float FWD_R_BUFF = 1.0;
-const float REV_L_BUFF = 1.0;
-const float REV_R_BUFF = 1.0;
+const float INP_L_BUFF = 0.0;
+const float INP_R_BUFF = 0.0;
+const float FWD_L_BUFF = 0.1;
+const float FWD_R_BUFF = 0.0;
+const float REV_L_BUFF = 0.0;
+const float REV_R_BUFF = 0.0;
 
 void setup_motors()
 {
@@ -101,13 +101,13 @@ void drive_motors(int gear, int steer, int speed)
     digitalWrite(dir_r, HIGH);
     if (steer >= 0) // steer right or straight
     {
-      l_speed = FWD_L_BUFF * speed * (1 + abs(steer)/steer_max);
-      r_speed = FWD_R_BUFF * (speed - REV_MAX) * (1 - abs(steer)/steer_max) + (FWD_R_BUFF * REV_MAX);
+      l_speed = (speed * (1 + abs(steer)/steer_max)) - (FWD_L_BUFF * 255);
+      r_speed = ((speed - REV_MAX) * (1 - abs(steer)/steer_max) + REV_MAX) - (FWD_R_BUFF * 255);
     }
     else // steer left
     {
-      l_speed = FWD_L_BUFF * (speed - REV_MAX) * (1 - abs(steer)/steer_max) + (FWD_L_BUFF * REV_MAX);
-      r_speed = FWD_R_BUFF * speed * (1 + abs(steer)/steer_max);
+      l_speed = ((speed - REV_MAX) * (1 - abs(steer)/steer_max) + REV_MAX) - (FWD_L_BUFF * 255);
+      r_speed = (speed * (1 + abs(steer)/steer_max)) - (FWD_R_BUFF * 255);
     }
     if (l_speed < 0)
     {

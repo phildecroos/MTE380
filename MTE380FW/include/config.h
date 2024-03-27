@@ -25,4 +25,4 @@ PC9 (I2C3_SDA)
 #define SERVO_DOWN 80; // servo input angle for down position
 
 #define MOTOR_STEER 100.0; // granularity of steering inputs
-#define MOTOR_SPEED 255;   // 0 to 255
+#define MOTOR_SPEED 200;   // 0 to 255

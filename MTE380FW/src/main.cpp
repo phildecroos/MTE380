@@ -9,6 +9,7 @@ const int DOWN_POS = SERVO_DOWN;
 const int DRIVE_SPEED = MOTOR_SPEED;
 const float STEER_RESOLUTION = MOTOR_STEER;
 const float MAX_LF_STEER = 1.0;
+const int HIS = 50;
 
 enum driving_gears
 {
@@ -174,7 +175,7 @@ void printColours()
   Serial.println(" ");
 }
 
-float followAlgorithm(int exit_case, ColourReading col_in, float prev_steer)
+float followAlgorithm(int exit_case, ColourReading col_in, float *prev_steer)
 {
   // return (STEER_RESOLUTION + 1) if exit_case is met
   // if ((exit_case == bullseye) && ((col_in.b_l > B_B_L) && (col_in.b_r > B_B_R)))
@@ -195,21 +196,38 @@ float followAlgorithm(int exit_case, ColourReading col_in, float prev_steer)
   // if (delta_ratio < 0.10)
   //   delta_ratio = 0.0;
 
-  // determine gains
+  // determine gains (all K values do nothing when == 1)
   // TODO - tune this for updated steering method & to dial in turning
-  float Kp = 0.25;
-  float Kd_dn = 4.0;
+  float Kp = 0.30;
+  float Kd_dn = 1.0;
   float Kd_up = 1.0;
-  // if (delta_ratio > 0.40)
-  //   Kp = 3.0 * pow(delta_ratio, 2);
-  // Serial.print(delta_ratio);
+  float total = 0.0;
+  for (int i = 0; i < HIS; i++)
+  {
+    total = total + prev_steer[i];
+  }
+  float threshold = 0.3;
+  if ((delta_ratio > threshold) && (abs(total / float(HIS)) > (0.9 * Kp * (STEER_RESOLUTION * MAX_LF_STEER) * threshold)))
+  {
+    Serial.println("above");
+    Kp = 5.0 * delta_ratio;
+  }
+  else if (abs(total / float(HIS)) > (0.9 * Kp * (STEER_RESOLUTION * MAX_LF_STEER) * threshold))
+  {
+    Serial.println("below");
+    for (int i = 0; i < HIS; i++)
+    {
+      prev_steer[i] = 0;
+    }
+  }
+  // Serial.println(total / HIS);
 
   // calculate steering amount
   float steering = Kp * (STEER_RESOLUTION * MAX_LF_STEER) * delta_ratio;
-  if ((prev_steer * delta > 0.0) && (abs(prev_steer) > steering))
-    steering = prev_steer - Kd_dn * (abs(prev_steer) - steering);
-  else if ((prev_steer * delta > 0.0) && (steering > abs(prev_steer)))
-    steering = prev_steer + Kd_up * (steering - abs(prev_steer));
+  if ((prev_steer[0] * delta > 0.0) && (abs(prev_steer[0]) > steering))
+    steering = prev_steer[0] - Kd_dn * (abs(prev_steer[0]) - steering);
+  else if ((prev_steer[0] * delta > 0.0) && (steering > abs(prev_steer[0])))
+    steering = prev_steer[0] + Kd_up * (steering - abs(prev_steer[0]));
   if (steering < 0.0)
     steering = 0.0;
   if (delta < 0.0)
@@ -223,7 +241,7 @@ float followAlgorithm(int exit_case, ColourReading col_in, float prev_steer)
   return steering;
 }
 
-float lineFollow(int exit_case, float prev_steer)
+float lineFollow(int exit_case, float *prev_steer)
 {
   // read colour sensors and calculat steering amount
   ColourReading col_in = read_colour();
@@ -233,7 +251,10 @@ float lineFollow(int exit_case, float prev_steer)
   if (steering == (STEER_RESOLUTION + 1))
     return STEER_RESOLUTION + 1;
   // throttle the speed according to how sharp the turn is
-  float speed = DRIVE_SPEED * (1 - 0.5 * (abs(steering) / (STEER_RESOLUTION * MAX_LF_STEER)));
+  // float speed = DRIVE_SPEED * (1 - 0.25 * (abs(steering) / (STEER_RESOLUTION * MAX_LF_STEER)));
+  float speed = DRIVE_SPEED;
+  // if (steering > (0.5 * (STEER_RESOLUTION * MAX_LF_STEER)))
+  //   speed = 0.25 * DRIVE_SPEED;
   // run motors at calculated steering and speed
   drive_motors(forward, steering, speed);
   return steering;
@@ -272,11 +293,15 @@ void loop()
   //   printCalibrationData();
   // }
 
-  float prev_steer = 0;
+  float prev_steer[HIS] = {0};
   while (1)
   {
-    prev_steer = lineFollow(bullseye, prev_steer);
-    if (prev_steer == (STEER_RESOLUTION + 1))
+    for (int i = 1; i < HIS; i++)
+    {
+      prev_steer[HIS - i] = prev_steer[HIS - i - 1];
+    }
+    prev_steer[0] = lineFollow(bullseye, prev_steer);
+    if (prev_steer[0] == (STEER_RESOLUTION + 1))
       break;
   }
   drive_motors(reverse, 0, 50);
