@@ -4,10 +4,12 @@
 
 /*
 Pins used for colour sensors I2C:
-PB8 (I2C1_SCL)
-PB9 (I2C1_SDA)
-PA8 (I2C3_SCL)
-PC9 (I2C3_SDA)
+PA8  (I2C3_SCL) Left
+PC9  (I2C3_SDA) Left
+PB8  (I2C1_SCL) Right
+PB9  (I2C1_SDA) Right
+PB10 (I2C2_SCL) Third
+PB3  (I2C2_SDA) Third
 */
 
 #define US_TRIGGER PA5;
@@ -15,14 +17,13 @@ PC9 (I2C3_SDA)
 
 #define SERVO PB6; // PWM
 
-#define MOTOR_MODE PB3; // MODE
-#define MOTOR_ENA_L PC7 // ENB (PWM)
-#define MOTOR_DIR_L PA9 // INB
-#define MOTOR_ENA_R PB10 // ENA (PWM)
-#define MOTOR_DIR_R PA10 // INA
+#define MOTOR_MODE PB5;   // MODE
+#define MOTOR_ENA_L PC7;  // ENB (PWM)
+#define MOTOR_DIR_L PA9;  // INB
+#define MOTOR_ENA_R PA7;  // ENA (PWM)
+#define MOTOR_DIR_R PA10; // INA
 
-#define SERVO_UP 180;  // servo input angle for up position
+#define SERVO_UP 0;    // servo input angle for up position
 #define SERVO_DOWN 80; // servo input angle for down position
 
-#define MOTOR_STEER 100.0; // granularity of steering inputs
-#define MOTOR_SPEED 200;   // 0 to 255
+#define MOTOR_SPEED 50;   // base speed of motors (0 to 255)

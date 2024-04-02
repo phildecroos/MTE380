@@ -7,9 +7,7 @@
 const int UP_POS = SERVO_UP;
 const int DOWN_POS = SERVO_DOWN;
 const int DRIVE_SPEED = MOTOR_SPEED;
-const float STEER_RESOLUTION = MOTOR_STEER;
-const float MAX_LF_STEER = 1.0;
-const int HIS = 50;
+const int HISTORY = 50;
 
 enum driving_gears
 {
@@ -25,107 +23,37 @@ enum lf_exit_cases
   returned = 2
 };
 
-// TODO - update needed values to use R,G,B not just one of them
-const float G_R_R = 85.0;  // calibrated green reading for right sensor on tape
-const float G_W_R = 400.0; // calibrated green reading for right sensor on wood
-const float B_B_R = 190.0; // calibrated green reading for right sensor on blue (bullseye)
-const float G_R_L = 95.0;  // calibrated green reading for left sensor on tape
-const float G_W_L = 450.0; // calibrated green reading for left sensor on wood
-const float B_B_L = 190.0; // calibrated green reading for left sensor on blue (bullseye)
-const float WEIGHTS[2] = {1.0, 1.0};
+const float G_RED_R = 125.0; // calibrated green readings for red tape and wood
+const float G_WOOD_R = 500.0;
+const float G_RED_L = 95.0;
+const float G_WOOD_L = 400.0;
 
-void demoDrive()
-{
-  drive_motors(forward, 100, DRIVE_SPEED);
-  delay(2000);
-  drive_motors(forward, 0, DRIVE_SPEED);
-  delay(2000);
-  drive_motors(forward, -100, DRIVE_SPEED);
-  delay(2000);
-}
+const float B_BULLSEYE_R = 200.0; // calibrated blue readings for the bullseye
+const float B_BULLSEYE_L = 200.0;
 
-void demoDriveToStop()
-{
-  drive_motors(forward, 0, DRIVE_SPEED);
-  int us_reading = 6;
-  while (us_reading > 5)
-  {
-    us_reading = read_ultrasonic();
-    Serial.println("US Reading: ");
-    Serial.println(us_reading);
-  }
-  drive_motors(forward, 0, 0);
-}
-
-void demoGate()
-{
-  int pos = 0;
-  Serial.println("DOWN");
-  move_servo(DOWN_POS);
-  while (1)
-  {
-    int us_reading = read_ultrasonic();
-    Serial.println("US Reading: ");
-    Serial.println(us_reading);
-    if (us_reading < 5)
-    {
-      if (pos == 0)
-      {
-        Serial.println("UP");
-        move_servo(UP_POS);
-        pos = 1;
-      }
-      else
-      {
-        Serial.println("DOWN");
-        move_servo(DOWN_POS);
-        pos = 0;
-      }
-      delay(1000);
-    }
-  }
-}
-
-void demoPickDrop()
-{
-  Serial.println("UP");
-  move_servo(UP_POS);
-  delay(500);
-
-  drive_motors(forward, 0, DRIVE_SPEED);
-  delay(1000);
-
-  drive_motors(reverse, 0, 0);
-  Serial.println("DOWN");
-  move_servo(DOWN_POS);
-  delay(500);
-
-  drive_motors(reverse, 0, DRIVE_SPEED);
-  delay(1000);
-
-  drive_motors(reverse, 0, 0);
-  delay(1000);
-
-  drive_motors(forward, 0, DRIVE_SPEED);
-  delay(1000);
-
-  drive_motors(reverse, 0, 0);
-  Serial.println("UP");
-  move_servo(UP_POS);
-  delay(500);
-
-  drive_motors(reverse, 0, DRIVE_SPEED);
-  delay(1000);
-}
+const float R_SAFEZONE_3 = 300.0; // calibrated readings on dark green tape of safe zone
+const float G_SAFEZONE_3 = 300.0;
+const float B_SAFEZONE_3 = 300.0;
 
 void printCalibrationData()
 {
   ColourReading col_in = read_colour();
 
-  Serial.print(col_in.g_l);
-  Serial.print(",");
-  Serial.print(col_in.g_r);
-  Serial.print("\n");
+  // Serial.print("G: ");
+  // Serial.print(col_in.g_l);
+  // Serial.print(",");
+  // Serial.print(col_in.g_r);
+  // Serial.print(",");
+  // Serial.print(col_in.g_3);
+  // Serial.print("\n");
+
+  // Serial.print("B: ");
+  // Serial.print(col_in.b_l);
+  // Serial.print(",");
+  // Serial.print(col_in.b_r);
+  // Serial.print(",");
+  // Serial.print(col_in.b_3);
+  // Serial.print("\n");
 
   // Serial.print("Left:");
   // Serial.print(col_in.r_l);
@@ -143,131 +71,98 @@ void printCalibrationData()
   // Serial.print(col_in.b_r);
   // Serial.print("\n");
 
-  delay(500);
-}
+  Serial.print("Three:");
+  Serial.print(col_in.r_3);
+  Serial.print(",");
+  Serial.print(col_in.g_3);
+  Serial.print(",");
+  Serial.print(col_in.b_3);
+  Serial.print("\n");
 
-void printColours()
-{
-  ColourReading col_in = read_colour();
-
-  Serial.print("\n---------------------\n");
-
-  Serial.print("R Left: ");
-  Serial.print(col_in.r_l, DEC);
-  Serial.print(" ");
-  Serial.print("G Left: ");
-  Serial.print(col_in.g_l, DEC);
-  Serial.print(" ");
-  Serial.print("B Left: ");
-  Serial.print(col_in.b_l, DEC);
-  Serial.print(" ");
-  Serial.println(" ");
-
-  Serial.print("R Right: ");
-  Serial.print(col_in.r_r, DEC);
-  Serial.print(" ");
-  Serial.print("G Right: ");
-  Serial.print(col_in.g_r, DEC);
-  Serial.print(" ");
-  Serial.print("B Right: ");
-  Serial.print(col_in.b_r, DEC);
-  Serial.print(" ");
-  Serial.println(" ");
+  delay(250);
 }
 
 float followAlgorithm(int exit_case, ColourReading col_in, float *prev_steer)
 {
-  // return (STEER_RESOLUTION + 1) if exit_case is met
-  // if ((exit_case == bullseye) && ((col_in.b_l > B_B_L) && (col_in.b_r > B_B_R)))
-  //   return STEER_RESOLUTION + 1;
-  // TODO - add checks for other exit cases
+  if ((exit_case == bullseye) && (col_in.b_l > B_BULLSEYE_L) && (col_in.b_r > B_BULLSEYE_R))
+    return 2;
+  else if ((exit_case == safezone) && (col_in.r_3 < R_SAFEZONE_3) && (col_in.g_3 < G_SAFEZONE_3) && (col_in.b_3 < B_SAFEZONE_3))
+    return 2;
 
-  // calculate error function (0 to 1, sign of delta is steer direction)
-  float L_notred = WEIGHTS[0] * abs(col_in.g_l - G_R_L);
-  float R_notred = WEIGHTS[1] * abs(col_in.g_r - G_R_R);
+  float L_notred = abs(col_in.g_l - G_RED_L);
+  float R_notred = abs(col_in.g_r - G_RED_R);
   float delta = L_notred - R_notred;
   float delta_ratio = 0;
   if (delta > 0)
-    delta_ratio = abs(delta / (WEIGHTS[0] * abs(G_W_L - G_R_L)));
+    delta_ratio = abs(delta / abs(G_WOOD_L - G_RED_L));
   else if (delta < 0)
-    delta_ratio = abs(delta / (WEIGHTS[1] * abs(G_W_R - G_R_R)));
+    delta_ratio = abs(delta / abs(G_WOOD_R - G_RED_R));
   if (delta_ratio > 1.0)
     delta_ratio = 1.0;
-  // if (delta_ratio < 0.10)
-  //   delta_ratio = 0.0;
 
-  // determine gains (all K values do nothing when == 1)
-  // TODO - tune this for updated steering method & to dial in turning
-  float Kp = 0.30;
-  float Kd_dn = 1.0;
-  float Kd_up = 1.0;
-  float total = 0.0;
-  for (int i = 0; i < HIS; i++)
-  {
-    total = total + prev_steer[i];
-  }
-  float threshold = 0.3;
-  if ((delta_ratio > threshold) && (abs(total / float(HIS)) > (0.9 * Kp * (STEER_RESOLUTION * MAX_LF_STEER) * threshold)))
-  {
-    Serial.println("above");
-    Kp = 5.0 * delta_ratio;
-  }
-  else if (abs(total / float(HIS)) > (0.9 * Kp * (STEER_RESOLUTION * MAX_LF_STEER) * threshold))
-  {
-    Serial.println("below");
-    for (int i = 0; i < HIS; i++)
-    {
-      prev_steer[i] = 0;
-    }
-  }
-  // Serial.println(total / HIS);
+  float Kp = 2.0;
+  // float Kd_down = 5.0;
 
-  // calculate steering amount
-  float steering = Kp * (STEER_RESOLUTION * MAX_LF_STEER) * delta_ratio;
-  if ((prev_steer[0] * delta > 0.0) && (abs(prev_steer[0]) > steering))
-    steering = prev_steer[0] - Kd_dn * (abs(prev_steer[0]) - steering);
-  else if ((prev_steer[0] * delta > 0.0) && (steering > abs(prev_steer[0])))
-    steering = prev_steer[0] + Kd_up * (steering - abs(prev_steer[0]));
+  float steering = Kp * pow(delta_ratio, 2);
+  // if ((prev_steer[0] * delta > 0.0) && (abs(prev_steer[0]) > steering))
+  //   steering = prev_steer[0] - Kd_down * (abs(prev_steer[0]) - steering);
+
   if (steering < 0.0)
     steering = 0.0;
-  if (delta < 0.0)
+  if (delta > 0.0)
     steering = -1.0 * steering;
 
-  // confirm that steering doesnt exceed bounds
-  if (steering > (STEER_RESOLUTION * MAX_LF_STEER))
-    steering = STEER_RESOLUTION * MAX_LF_STEER;
-  else if (steering < (-1 * STEER_RESOLUTION * MAX_LF_STEER))
-    steering = -1 * STEER_RESOLUTION * MAX_LF_STEER;
+  if (steering > 1)
+    steering = 1;
+  else if (steering < -1)
+    steering = -1;
   return steering;
 }
 
-float lineFollow(int exit_case, float *prev_steer)
+void lineFollow(int exit_case, int exit_samples)
 {
-  // read colour sensors and calculat steering amount
-  ColourReading col_in = read_colour();
-  float steering = followAlgorithm(exit_case, col_in, prev_steer);
-  // Serial.print(steering);
-  // stop line following if exit case is met
-  if (steering == (STEER_RESOLUTION + 1))
-    return STEER_RESOLUTION + 1;
-  // throttle the speed according to how sharp the turn is
-  // float speed = DRIVE_SPEED * (1 - 0.25 * (abs(steering) / (STEER_RESOLUTION * MAX_LF_STEER)));
-  float speed = DRIVE_SPEED;
-  // if (steering > (0.5 * (STEER_RESOLUTION * MAX_LF_STEER)))
-  //   speed = 0.25 * DRIVE_SPEED;
-  // run motors at calculated steering and speed
-  drive_motors(forward, steering, speed);
-  return steering;
+  float prev_steer[HISTORY] = {0};
+  while (1)
+  {
+    for (int i = 1; i < HISTORY; i++)
+    {
+      prev_steer[HISTORY - i] = prev_steer[HISTORY - i - 1];
+    }
+
+    float steering = followAlgorithm(exit_case, read_colour(), prev_steer);
+    if (steering != (2))
+      drive_motors(forward, steering, DRIVE_SPEED);
+    prev_steer[0] = steering;
+
+    bool stop = true;
+    for (int i = 0; i < exit_samples; i++)
+    {
+      if (prev_steer[i] != (2))
+        stop = false;
+    }
+    if (stop)
+      break;
+  }
 }
 
-// TODO - make pickup routine
 void pickUp()
 {
+  drive_motors(forward, 0, 50);
+  move_servo(DOWN_POS);
+  delay(100);
+
+  drive_motors(forward, 0, 0);
+  delay(250);
+
+  drive_motors(inplace, 100, 150);
+  delay(500);
+
+  drive_motors(forward, 0, 0);
 }
 
-// TODO - make dropoff routine
 void dropOff()
 {
+  drive_motors(forward, 0, 0);
 }
 
 void setup()
@@ -276,8 +171,8 @@ void setup()
   Serial.println("Setting up...");
   setup_ultrasonic();
   Serial.println("Set up ultrasonic sensor");
-  // setup_servo();
-  // Serial.println("Set up servo motor");
+  setup_servo();
+  Serial.println("Set up servo motor");
   setup_motors();
   Serial.println("Set up dc motors");
   setup_colour();
@@ -285,7 +180,6 @@ void setup()
   Serial.println("Setup complete");
 }
 
-// TODO - set up flow for overall process - currently just line follows and stops at bullseye
 void loop()
 {
   // while (1)
@@ -293,31 +187,17 @@ void loop()
   //   printCalibrationData();
   // }
 
-  float prev_steer[HIS] = {0};
-  while (1)
-  {
-    for (int i = 1; i < HIS; i++)
-    {
-      prev_steer[HIS - i] = prev_steer[HIS - i - 1];
-    }
-    prev_steer[0] = lineFollow(bullseye, prev_steer);
-    if (prev_steer[0] == (STEER_RESOLUTION + 1))
-      break;
-  }
-  drive_motors(reverse, 0, 50);
-  while (1)
-  {
-    ColourReading col_in = read_colour();
-    if ((col_in.b_l < B_B_L) && (col_in.b_r < B_B_R))
-      break;
-  }
-  drive_motors(forward, 0, 0);
+  lineFollow(bullseye, 10);
+  pickUp();
+  lineFollow(safezone, 10);
+  dropOff();
+  lineFollow(returned, 10);
 
   Serial.println("Shutting down...");
   shutdown_motors();
   Serial.println("Shut down dc motors");
-  // shutdown_servo();
-  // Serial.println("Shut down servo motor");
+  shutdown_servo();
+  Serial.println("Shut down servo motor");
   shutdown_colour();
   Serial.println("Shut down colour sensors");
   shutdown_ultrasonic();
