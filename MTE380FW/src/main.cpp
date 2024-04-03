@@ -9,35 +9,42 @@ const int DOWN_POS = SERVO_DOWN;
 const int DRIVE_SPEED = MOTOR_SPEED;
 const int HISTORY = 50;
 
-enum driving_gears
-{
-  forward = 0,
-  reverse = 1,
-  inplace = 2
-};
-
 enum lf_exit_cases
 {
   bullseye = 0,
-  safezone = 1,
-  returned = 2
+  returnln = 1,
+  safezone = 2,
+  returned = 3
 };
 
-const float G_RED_R = 125.0; // calibrated green readings for red tape and wood
-const float G_WOOD_R = 500.0;
-const float G_RED_L = 95.0;
-const float G_WOOD_L = 400.0;
+const float G_RED_R = 120.0; // calibrated green readings for red tape and wood
+const float G_WOOD_R = 400.0;
+const float G_RED_L = 100.0;
+const float G_WOOD_L = 300.0;
 
 const float B_BULLSEYE_R = 200.0; // calibrated blue readings for the bullseye
 const float B_BULLSEYE_L = 200.0;
+const float B_BULLSEYE_3 = 600.0;
+const float G_RED_3 = 300.0; // calibrated green reading for red tape
 
 const float R_SAFEZONE_3 = 300.0; // calibrated readings on dark green tape of safe zone
 const float G_SAFEZONE_3 = 300.0;
 const float B_SAFEZONE_3 = 300.0;
 
+const float G_START_R = 150.0; // calibrated green readings for red tape at start
+const float G_START_L = 150.0;
+
 void printCalibrationData()
 {
   ColourReading col_in = read_colour();
+
+  // Serial.print("R: ");
+  // Serial.print(col_in.r_l);
+  // Serial.print(",");
+  // Serial.print(col_in.r_r);
+  // Serial.print(",");
+  // Serial.print(col_in.r_3);
+  // Serial.print("\n");
 
   // Serial.print("G: ");
   // Serial.print(col_in.g_l);
@@ -47,13 +54,13 @@ void printCalibrationData()
   // Serial.print(col_in.g_3);
   // Serial.print("\n");
 
-  // Serial.print("B: ");
-  // Serial.print(col_in.b_l);
-  // Serial.print(",");
-  // Serial.print(col_in.b_r);
-  // Serial.print(",");
-  // Serial.print(col_in.b_3);
-  // Serial.print("\n");
+  Serial.print("B: ");
+  Serial.print(col_in.b_l);
+  Serial.print(",");
+  Serial.print(col_in.b_r);
+  Serial.print(",");
+  Serial.print(col_in.b_3);
+  Serial.print("\n");
 
   // Serial.print("Left:");
   // Serial.print(col_in.r_l);
@@ -71,51 +78,71 @@ void printCalibrationData()
   // Serial.print(col_in.b_r);
   // Serial.print("\n");
 
-  Serial.print("Three:");
-  Serial.print(col_in.r_3);
-  Serial.print(",");
-  Serial.print(col_in.g_3);
-  Serial.print(",");
-  Serial.print(col_in.b_3);
-  Serial.print("\n");
+  // Serial.print("Three:");
+  // Serial.print(col_in.r_3);
+  // Serial.print(",");
+  // Serial.print(col_in.g_3);
+  // Serial.print(",");
+  // Serial.print(col_in.b_3);
+  // Serial.print("\n");
 
   delay(250);
 }
 
+bool checkExit(int exit_case, ColourReading col_in)
+{
+  if ((exit_case == bullseye) && (col_in.b_l > B_BULLSEYE_L) && (col_in.b_r > B_BULLSEYE_R) && (col_in.b_3 > B_BULLSEYE_3))
+    return true;
+  if ((exit_case == returnln) && (col_in.g_3 < G_RED_3))
+    return true;
+  if ((exit_case == safezone) && (col_in.r_3 < R_SAFEZONE_3) && (col_in.g_3 < G_SAFEZONE_3) && (col_in.b_3 < B_SAFEZONE_3))
+    return true;
+  if ((exit_case == returned) && (col_in.g_l < (G_START_L)) && (col_in.g_r < (G_START_R)))
+    return true;
+  return false;
+}
+
+void waitUntil(int exit_case, int exit_samples)
+{
+  bool prev[exit_samples] = {0};
+  while (1)
+  {
+    for (int i = 1; i < exit_samples; i++)
+    {
+      prev[exit_samples - i] = prev[exit_samples - i - 1];
+    }
+
+    prev[0] = checkExit(exit_case, read_colour());
+
+    bool stop = true;
+    for (int i = 0; i < exit_samples; i++)
+    {
+      if (!prev[i])
+      {
+        stop = false;
+        break;
+      }
+    }
+    if (stop)
+      break;
+  }
+}
+
 float followAlgorithm(int exit_case, ColourReading col_in, float *prev_steer)
 {
-  if ((exit_case == bullseye) && (col_in.b_l > B_BULLSEYE_L) && (col_in.b_r > B_BULLSEYE_R))
-    return 2;
-  else if ((exit_case == safezone) && (col_in.r_3 < R_SAFEZONE_3) && (col_in.g_3 < G_SAFEZONE_3) && (col_in.b_3 < B_SAFEZONE_3))
+  if (checkExit(exit_case, col_in))
     return 2;
 
-  float L_notred = abs(col_in.g_l - G_RED_L);
-  float R_notred = abs(col_in.g_r - G_RED_R);
-  float delta = L_notred - R_notred;
-  float delta_ratio = 0;
-  if (delta > 0)
-    delta_ratio = abs(delta / abs(G_WOOD_L - G_RED_L));
-  else if (delta < 0)
-    delta_ratio = abs(delta / abs(G_WOOD_R - G_RED_R));
-  if (delta_ratio > 1.0)
-    delta_ratio = 1.0;
+  float L_error = clamp(((col_in.g_l - G_RED_L) / (G_WOOD_L - G_RED_L)), 0.0, 1.0);
+  float R_error = clamp(((col_in.g_r - G_RED_R) / (G_WOOD_R - G_RED_R)), 0.0, 1.0);
+  float E = clamp((L_error - R_error), -1.0, 1.0);
 
-  float Kp = 2.0;
-  // float Kd_down = 5.0;
+  float Kp = 2.0;                       // reliable 2.0
+  float steering = Kp * pow(abs(E), 4); // reliable pow 4
 
-  float steering = Kp * pow(delta_ratio, 2);
-  // if ((prev_steer[0] * delta > 0.0) && (abs(prev_steer[0]) > steering))
-  //   steering = prev_steer[0] - Kd_down * (abs(prev_steer[0]) - steering);
-
-  if (steering < 0.0)
-    steering = 0.0;
-  if (delta > 0.0)
-    steering = -1.0 * steering;
-
-  if (steering > 1)
-    steering = 1;
-  else if (steering < -1)
-    steering = -1;
+  if (E < 0.0)
+    steering *= -1.0;
+  steering = clamp(steering, -1.0, 1.0);
   return steering;
 }
 
@@ -147,22 +174,42 @@ void lineFollow(int exit_case, int exit_samples)
 
 void pickUp()
 {
-  drive_motors(forward, 0, 50);
-  move_servo(DOWN_POS);
+  drive_motors(inplace, 1.0, 50);
   delay(100);
 
-  drive_motors(forward, 0, 0);
-  delay(250);
+  move_servo(DOWN_POS);
+  drive_motors(forward, 0.0, 50);
+  delay(300);
 
-  drive_motors(inplace, 100, 150);
-  delay(500);
+  drive_motors(inplace, 1.0, 75);
+  delay(750);
+  waitUntil(returnln, 3);
+  delay(200);
 
-  drive_motors(forward, 0, 0);
+  drive_motors(forward, 0.0, 0);
 }
 
 void dropOff()
 {
-  drive_motors(forward, 0, 0);
+  drive_motors(inplace, 1.0, 50);
+  delay(200);
+  waitUntil(safezone, 3);
+  delay(100);
+
+  drive_motors(forward, 0.0, 50);
+  delay(700);
+
+  drive_motors(reverse, 0.0, 50);
+  move_servo(UP_POS);
+  delay(500);
+
+  drive_motors(inplace, -1.0, 50);
+  delay(200);
+
+  drive_motors(reverse, 0.25, 50);
+  delay(1200);
+
+  drive_motors(forward, 0.0, 0);
 }
 
 void setup()
@@ -182,16 +229,16 @@ void setup()
 
 void loop()
 {
-  // while (1)
-  // {
-  //   printCalibrationData();
-  // }
-
-  lineFollow(bullseye, 10);
+  Serial.println("Line following to the bullseye");
+  lineFollow(bullseye, 1);
+  Serial.println("Picking up minifigure");
   pickUp();
+  Serial.println("Line following to the safe zone");
   lineFollow(safezone, 10);
+  Serial.println("Dropping off minifigure");
   dropOff();
-  lineFollow(returned, 10);
+  Serial.println("Line following back to start");
+  lineFollow(returned, 3);
 
   Serial.println("Shutting down...");
   shutdown_motors();

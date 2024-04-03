@@ -26,4 +26,4 @@ PB3  (I2C2_SDA) Third
 #define SERVO_UP 0;    // servo input angle for up position
 #define SERVO_DOWN 80; // servo input angle for down position
 
-#define MOTOR_SPEED 50;   // base speed of motors (0 to 255)
+#define MOTOR_SPEED 125; // base speed of motors (0 to 255), reliable 125
