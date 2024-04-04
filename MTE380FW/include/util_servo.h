@@ -1,25 +1,27 @@
 #include <Arduino.h>
 #include <Servo.h>
-#include "config.h"
+#include "pinout.h"
 
 int pin = SERVO;
-const int DOWN = SERVO_DOWN;
-const int UP = SERVO_UP;
+const int DOWN = 80;
+const int UP = 0;
 
-Servo myservo;
+Servo gate;
 
 void setup_servo()
 {
-  myservo.attach(pin);
-  myservo.write(UP);
+  gate.attach(pin);
+  gate.write(UP);
 }
 
 void shutdown_servo()
 {
-  myservo.write(UP);
+  gate.write(UP);
+  delay(500);
+  gate.detach();
 }
 
 void move_servo(int pos)
 {
-  myservo.write(pos);
+  gate.write(pos);
 }

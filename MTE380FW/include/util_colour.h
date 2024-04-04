@@ -1,14 +1,21 @@
 #include "Wire.h"
 #include "Adafruit_TCS34725.h"
-#include "config.h"
+#include "pinout.h"
+
+int tcsl_sda = TCSL_SDA;
+int tcsl_scl = TCSL_SCL;
+int tcsr_sda = TCSR_SDA;
+int tcsr_scl = TCSR_SCL;
+int tcs3_sda = TCS3_SDA;
+int tcs3_scl = TCS3_SCL;
 
 Adafruit_TCS34725 tcs_left = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_60X);
 Adafruit_TCS34725 tcs_right = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_60X);
 Adafruit_TCS34725 tcs_three = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_60X);
 
-TwoWire Wire1(PC9, PA8);
-TwoWire Wire2(PB9, PB8);
-TwoWire Wire3(PB3, PB10);
+TwoWire Wire1(tcsl_sda, tcsl_scl);
+TwoWire Wire2(tcsr_sda, tcsr_scl);
+TwoWire Wire3(tcs3_sda, tcs3_scl);
 
 class ColourReading
 {
@@ -37,52 +44,14 @@ public:
   }
 };
 
-void setup_colour()
+bool setup_colour()
 {
-  if (tcs_left.begin(0x29, &Wire1))
-  {
-    Serial.println("Found left colour sensor");
-  }
-  else
-  {
-    Serial.println("No TCS34725_left found ... check your connections");
-    while (1)
-      ;
-  }
-
-  if (tcs_right.begin(0x29, &Wire2))
-  {
-    Serial.println("Found right colour sensor");
-  }
-  else
-  {
-    Serial.println("No TCS34725_right found ... check your connections");
-    while (1)
-      ;
-  }
-
-  if (tcs_three.begin(0x29, &Wire3))
-  {
-    Serial.println("Found third colour sensor");
-  }
-  else
-  {
-    Serial.println("No TCS34725_three found ... check your connections");
-    while (1)
-      ;
-  }
-}
-
-void shutdown_colour()
-{
-  // can't think of anything that needs to be shut down here
+  return ((tcs_left.begin(0x29, &Wire1)) && (tcs_right.begin(0x29, &Wire2)) && (tcs_three.begin(0x29, &Wire3)));
 }
 
 ColourReading read_colour()
 {
-  uint16_t r_left, g_left, b_left, c_left, colorTemp_left, lux_left;
-  uint16_t r_right, g_right, b_right, c_right, colorTemp_right, lux_right;
-  uint16_t r_three, g_three, b_three, c_three, colorTemp_three, lux_three;
+  uint16_t r_left, g_left, b_left, c_left, r_right, g_right, b_right, c_right, r_three, g_three, b_three, c_three;
 
   tcs_left.getRawData(&r_left, &g_left, &b_left, &c_left);
   tcs_right.getRawData(&r_right, &g_right, &b_right, &c_right);

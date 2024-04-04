@@ -1,5 +1,10 @@
 #include <Arduino.h>
-#include "config.h"
+#include "pinout.h"
+
+#define L_FWD LOW
+#define L_REV HIGH
+#define R_FWD HIGH
+#define R_REV LOW
 
 enum drive_gears
 {
@@ -8,24 +13,18 @@ enum drive_gears
   inplace = 2
 };
 
-const int BASE_SPEED = MOTOR_SPEED;
 int mode = MOTOR_MODE;
 int ena_l = MOTOR_ENA_L;
 int dir_l = MOTOR_DIR_L;
 int ena_r = MOTOR_ENA_R;
 int dir_r = MOTOR_DIR_R;
+
 float fwd_scale_up = 0.0;
 float fwd_scale_dn = 75.0;
 float rev_scale_up = 0.0;
 float rev_scale_dn = 50.0;
 
-#define L_FWD LOW
-#define L_REV HIGH
-#define R_FWD HIGH
-#define R_REV LOW
-
-float l_speed;
-float r_speed;
+float l_speed, r_speed;
 
 const float L_BUFF = 1.0;
 const float R_BUFF = 1.0;
@@ -52,15 +51,6 @@ void shutdown_motors()
   analogWrite(ena_r, 0);
   digitalWrite(dir_l, LOW);
   digitalWrite(dir_r, LOW);
-}
-
-float clamp(float val, float min, float max)
-{
-  if (val > max)
-    return max;
-  else if (val < min)
-    return min;
-  return val;
 }
 
 void drive_motors(int gear, float steer, int speed)
@@ -116,6 +106,7 @@ void drive_motors(int gear, float steer, int speed)
     digitalWrite(dir_r, R_FWD);
   else
     digitalWrite(dir_r, R_REV);
+
   analogWrite(ena_l, abs(l_speed));
   analogWrite(ena_r, abs(r_speed));
 }

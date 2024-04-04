@@ -1,18 +1,17 @@
-#include "config.h"
+#include "pinout.h"
+#include "general.h"
 #include "util_colour.h"
 #include "util_servo.h"
 #include "util_motors.h"
 
-const int HISTORY = 50;
-
 enum lf_exit_cases
 {
   bullseye = 0,
-  returnl3 = 1,
-  safezone = 2,
+  safezone = 1,
+  returned = 2,
   returnll = 3,
   returnlr = 4,
-  returned = 5
+  returnl3 = 5
 };
 
 const float G_RED_R = 120.0; // calibrated green readings for red tape and wood
@@ -29,24 +28,19 @@ const float R_SAFEZONE_3 = 300.0; // calibrated readings on dark green tape of s
 const float G_SAFEZONE_3 = 300.0;
 const float B_SAFEZONE_3 = 300.0;
 
-const float G_START_R = 150.0; // calibrated green readings for red tape at start
+const float G_START_R = 150.0; // green threshold for both sensors to see tape at start
 const float G_START_L = 150.0;
 
 bool checkExit(int exit_case, ColourReading col_in)
 {
-  if ((exit_case == bullseye) && (col_in.b_l > B_BULLSEYE_L) && (col_in.b_r > B_BULLSEYE_R) && (col_in.b_3 > B_BULLSEYE_3))
-    return true;
-  if ((exit_case == returnl3) && (col_in.g_3 < G_RED_3))
-    return true;
-  if ((exit_case == returnll) && (col_in.g_l < (G_RED_L + 15)))
-    return true;
-  if ((exit_case == returnlr) && (col_in.g_r < (G_RED_R + 15)))
-    return true;
-  if ((exit_case == safezone) && (col_in.r_3 < R_SAFEZONE_3) && (col_in.g_3 < G_SAFEZONE_3) && (col_in.b_3 < B_SAFEZONE_3))
-    return true;
-  if ((exit_case == returned) && (col_in.g_l < (G_START_L)) && (col_in.g_r < (G_START_R)))
-    return true;
-  return false;
+  return (
+     ((exit_case == bullseye) && (col_in.b_l > B_BULLSEYE_L) && (col_in.b_r > B_BULLSEYE_R) && (col_in.b_3 > B_BULLSEYE_3))
+  || ((exit_case == returnl3) && (col_in.g_3 < G_RED_3))
+  || ((exit_case == returnll) && (col_in.g_l < (G_RED_L + 15)))
+  || ((exit_case == returnlr) && (col_in.g_r < (G_RED_R + 15)))
+  || ((exit_case == safezone) && (col_in.r_3 < R_SAFEZONE_3) && (col_in.g_3 < G_SAFEZONE_3) && (col_in.b_3 < B_SAFEZONE_3))
+  || ((exit_case == returned) && (col_in.g_l < (G_START_L)) && (col_in.g_r < (G_START_R)))
+  );
 }
 
 void waitUntil(int exit_case, int exit_samples)
@@ -54,28 +48,14 @@ void waitUntil(int exit_case, int exit_samples)
   bool prev[exit_samples] = {0};
   while (1)
   {
-    for (int i = 1; i < exit_samples; i++)
-    {
-      prev[exit_samples - i] = prev[exit_samples - i - 1];
-    }
-
+    shift(prev, exit_samples);
     prev[0] = checkExit(exit_case, read_colour());
-
-    bool stop = true;
-    for (int i = 0; i < exit_samples; i++)
-    {
-      if (!prev[i])
-      {
-        stop = false;
-        break;
-      }
-    }
-    if (stop)
+    if (checkAll(prev, exit_samples))
       break;
   }
 }
 
-float followAlgorithm(int exit_case, ColourReading col_in, float *prev_steer)
+float followAlgorithm(int exit_case, ColourReading col_in)
 {
   if (checkExit(exit_case, col_in))
     return 2;
@@ -87,34 +67,24 @@ float followAlgorithm(int exit_case, ColourReading col_in, float *prev_steer)
   float Kp = 2.0;                       // reliable 2.0
   float steering = Kp * pow(abs(E), 4); // reliable pow 4
 
-  if (E < 0.0)
+  if (E < 0)
     steering *= -1.0;
-  steering = clamp(steering, -1.0, 1.0);
-  return steering;
+  return clamp(steering, -1.0, 1.0);
 }
 
 void lineFollow(int exit_case, int exit_samples)
 {
-  float prev_steer[HISTORY] = {0};
+  bool prev[exit_samples] = {0};
   while (1)
   {
-    for (int i = 1; i < HISTORY; i++)
-    {
-      prev_steer[HISTORY - i] = prev_steer[HISTORY - i - 1];
-    }
+    shift(prev, exit_samples);
 
-    float steering = followAlgorithm(exit_case, read_colour(), prev_steer);
-    if (steering != (2))
-      drive_motors(forward, steering, BASE_SPEED);
-    prev_steer[0] = steering;
+    float steering = followAlgorithm(exit_case, read_colour());
+    if (steering != 2)
+      drive_motors(forward, steering, 125); // reliable 125
+    prev[0] = (steering == 2);
 
-    bool stop = true;
-    for (int i = 0; i < exit_samples; i++)
-    {
-      if (prev_steer[i] != (2))
-        stop = false;
-    }
-    if (stop)
+    if (checkAll(prev, exit_samples))
       break;
   }
 }
@@ -161,9 +131,13 @@ void setup()
 {
   Serial.begin(9600);
   Serial.println("Setting up...");
-  setup_servo();
   setup_motors();
-  setup_colour();
+  setup_servo();
+  if (!setup_colour())
+  {
+    Serial.println("ERROR: TCS not found");
+    while (1);
+  }
   Serial.println("Setup complete");
 }
 
@@ -181,11 +155,9 @@ void loop()
   lineFollow(returned, 3);
 
   Serial.println("Shutting down...");
-  shutdown_servo();
   shutdown_motors();
-  shutdown_colour();
+  shutdown_servo();
   Serial.println("Shutdown complete");
 
-  while (1)
-    ;
+  while (1);
 }
