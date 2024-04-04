@@ -4,17 +4,16 @@
 #include "util_motors.h"
 #include "util_ultrasonic.h"
 
-const int UP_POS = SERVO_UP;
-const int DOWN_POS = SERVO_DOWN;
-const int DRIVE_SPEED = MOTOR_SPEED;
 const int HISTORY = 50;
 
 enum lf_exit_cases
 {
   bullseye = 0,
-  returnln = 1,
+  returnl3 = 1,
   safezone = 2,
-  returned = 3
+  returnll = 3,
+  returnlr = 4,
+  returned = 5
 };
 
 const float G_RED_R = 120.0; // calibrated green readings for red tape and wood
@@ -34,66 +33,15 @@ const float B_SAFEZONE_3 = 300.0;
 const float G_START_R = 150.0; // calibrated green readings for red tape at start
 const float G_START_L = 150.0;
 
-void printCalibrationData()
-{
-  ColourReading col_in = read_colour();
-
-  // Serial.print("R: ");
-  // Serial.print(col_in.r_l);
-  // Serial.print(",");
-  // Serial.print(col_in.r_r);
-  // Serial.print(",");
-  // Serial.print(col_in.r_3);
-  // Serial.print("\n");
-
-  // Serial.print("G: ");
-  // Serial.print(col_in.g_l);
-  // Serial.print(",");
-  // Serial.print(col_in.g_r);
-  // Serial.print(",");
-  // Serial.print(col_in.g_3);
-  // Serial.print("\n");
-
-  Serial.print("B: ");
-  Serial.print(col_in.b_l);
-  Serial.print(",");
-  Serial.print(col_in.b_r);
-  Serial.print(",");
-  Serial.print(col_in.b_3);
-  Serial.print("\n");
-
-  // Serial.print("Left:");
-  // Serial.print(col_in.r_l);
-  // Serial.print(",");
-  // Serial.print(col_in.g_l);
-  // Serial.print(",");
-  // Serial.print(col_in.b_l);
-  // Serial.print("\n");
-
-  // Serial.print("Right:");
-  // Serial.print(col_in.r_r);
-  // Serial.print(",");
-  // Serial.print(col_in.g_r);
-  // Serial.print(",");
-  // Serial.print(col_in.b_r);
-  // Serial.print("\n");
-
-  // Serial.print("Three:");
-  // Serial.print(col_in.r_3);
-  // Serial.print(",");
-  // Serial.print(col_in.g_3);
-  // Serial.print(",");
-  // Serial.print(col_in.b_3);
-  // Serial.print("\n");
-
-  delay(250);
-}
-
 bool checkExit(int exit_case, ColourReading col_in)
 {
   if ((exit_case == bullseye) && (col_in.b_l > B_BULLSEYE_L) && (col_in.b_r > B_BULLSEYE_R) && (col_in.b_3 > B_BULLSEYE_3))
     return true;
-  if ((exit_case == returnln) && (col_in.g_3 < G_RED_3))
+  if ((exit_case == returnl3) && (col_in.g_3 < G_RED_3))
+    return true;
+  if ((exit_case == returnll) && (col_in.g_l < (G_RED_L + 15)))
+    return true;
+  if ((exit_case == returnlr) && (col_in.g_r < (G_RED_R + 15)))
     return true;
   if ((exit_case == safezone) && (col_in.r_3 < R_SAFEZONE_3) && (col_in.g_3 < G_SAFEZONE_3) && (col_in.b_3 < B_SAFEZONE_3))
     return true;
@@ -158,7 +106,7 @@ void lineFollow(int exit_case, int exit_samples)
 
     float steering = followAlgorithm(exit_case, read_colour(), prev_steer);
     if (steering != (2))
-      drive_motors(forward, steering, DRIVE_SPEED);
+      drive_motors(forward, steering, BASE_SPEED);
     prev_steer[0] = steering;
 
     bool stop = true;
@@ -177,13 +125,13 @@ void pickUp()
   drive_motors(inplace, 1.0, 50);
   delay(100);
 
-  move_servo(DOWN_POS);
+  move_servo(DOWN);
   drive_motors(forward, 0.0, 50);
   delay(300);
 
   drive_motors(inplace, 1.0, 75);
   delay(750);
-  waitUntil(returnln, 3);
+  waitUntil(returnl3, 3);
   delay(200);
 
   drive_motors(forward, 0.0, 0);
@@ -192,22 +140,20 @@ void pickUp()
 void dropOff()
 {
   drive_motors(inplace, 1.0, 50);
-  delay(200);
-  waitUntil(safezone, 3);
-  delay(100);
+  delay(300);
 
   drive_motors(forward, 0.0, 50);
   delay(700);
 
-  drive_motors(reverse, 0.0, 50);
-  move_servo(UP_POS);
-  delay(500);
+  drive_motors(reverse, 0.1, 50);
+  move_servo(UP);
+  delay(2300);
 
-  drive_motors(inplace, -1.0, 50);
-  delay(200);
+  drive_motors(forward, 1.0, 100);
+  waitUntil(returnll, 3);
 
-  drive_motors(reverse, 0.25, 50);
-  delay(1200);
+  drive_motors(forward, -1.0, 100);
+  waitUntil(returnlr, 3);
 
   drive_motors(forward, 0.0, 0);
 }
@@ -234,7 +180,7 @@ void loop()
   Serial.println("Picking up minifigure");
   pickUp();
   Serial.println("Line following to the safe zone");
-  lineFollow(safezone, 10);
+  lineFollow(safezone, 3);
   Serial.println("Dropping off minifigure");
   dropOff();
   Serial.println("Line following back to start");

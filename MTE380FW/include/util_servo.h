@@ -3,20 +3,20 @@
 #include "config.h"
 
 int pin = SERVO;
-int down = SERVO_DOWN;
-int up = SERVO_UP;
+const int DOWN = SERVO_DOWN;
+const int UP = SERVO_UP;
 
 Servo myservo;
 
 void setup_servo()
 {
   myservo.attach(pin);
-  myservo.write(up);
+  myservo.write(UP);
 }
 
 void shutdown_servo()
 {
-  myservo.write(up);
+  myservo.write(UP);
 }
 
 void move_servo(int pos)

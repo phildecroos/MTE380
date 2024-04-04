@@ -8,6 +8,7 @@ enum drive_gears
   inplace = 2
 };
 
+const int BASE_SPEED = MOTOR_SPEED;
 int mode = MOTOR_MODE;
 int ena_l = MOTOR_ENA_L;
 int dir_l = MOTOR_DIR_L;
