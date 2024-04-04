@@ -12,9 +12,6 @@ PB10 (I2C2_SCL) Third
 PB3  (I2C2_SDA) Third
 */
 
-#define US_TRIGGER PA5;
-#define US_ECHO PA6;
-
 #define SERVO PB6; // PWM
 
 #define MOTOR_MODE PB5;   // MODE

@@ -2,7 +2,6 @@
 #include "util_colour.h"
 #include "util_servo.h"
 #include "util_motors.h"
-#include "util_ultrasonic.h"
 
 const int HISTORY = 50;
 
@@ -162,14 +161,9 @@ void setup()
 {
   Serial.begin(9600);
   Serial.println("Setting up...");
-  setup_ultrasonic();
-  Serial.println("Set up ultrasonic sensor");
   setup_servo();
-  Serial.println("Set up servo motor");
   setup_motors();
-  Serial.println("Set up dc motors");
   setup_colour();
-  Serial.println("Set up colour sensors");
   Serial.println("Setup complete");
 }
 
@@ -187,14 +181,9 @@ void loop()
   lineFollow(returned, 3);
 
   Serial.println("Shutting down...");
-  shutdown_motors();
-  Serial.println("Shut down dc motors");
   shutdown_servo();
-  Serial.println("Shut down servo motor");
+  shutdown_motors();
   shutdown_colour();
-  Serial.println("Shut down colour sensors");
-  shutdown_ultrasonic();
-  Serial.println("Shut down ultrasonic sensor");
   Serial.println("Shutdown complete");
 
   while (1)
