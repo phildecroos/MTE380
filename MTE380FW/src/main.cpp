@@ -72,7 +72,7 @@ float followAlgorithm(int exit_case, ColourReading col_in)
   return clamp(steering, -1.0, 1.0);
 }
 
-void lineFollow(int exit_case, int exit_samples)
+void lineFollow(int speed, int exit_case, int exit_samples)
 {
   bool prev[exit_samples] = {0};
   while (1)
@@ -81,7 +81,7 @@ void lineFollow(int exit_case, int exit_samples)
 
     float steering = followAlgorithm(exit_case, read_colour());
     if (steering != 2)
-      drive_motors(forward, steering, 125); // reliable 125
+      drive_motors(forward, steering, speed);
     prev[0] = (steering == 2);
 
     if (checkAll(prev, exit_samples))
@@ -144,15 +144,15 @@ void setup()
 void loop()
 {
   Serial.println("Line following to the bullseye");
-  lineFollow(bullseye, 1);
+  lineFollow(125, bullseye, 1); // reliable 125
   Serial.println("Picking up minifigure");
   pickUp();
   Serial.println("Line following to the safe zone");
-  lineFollow(safezone, 3);
+  lineFollow(125, safezone, 3);
   Serial.println("Dropping off minifigure");
   dropOff();
   Serial.println("Line following back to start");
-  lineFollow(returned, 3);
+  lineFollow(125, returned, 3);
 
   Serial.println("Shutting down...");
   shutdown_motors();
