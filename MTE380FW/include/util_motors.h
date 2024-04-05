@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include "pinout.h"
 
 #define L_FWD LOW
 #define L_REV HIGH

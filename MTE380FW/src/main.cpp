@@ -1,4 +1,3 @@
-#include "pinout.h"
 #include "general.h"
 #include "util_colour.h"
 #include "util_servo.h"

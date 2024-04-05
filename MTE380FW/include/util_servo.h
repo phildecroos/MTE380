@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <Servo.h>
-#include "pinout.h"
 
 const int SERVO = PB6; // D10, PWM
 

@@ -1,6 +1,5 @@
 #include "Wire.h"
 #include "Adafruit_TCS34725.h"
-#include "pinout.h"
 
 const int TCSL_SDA = PC9;  // Top pin, All I2C
 const int TCSL_SCL = PA8;  // D7
