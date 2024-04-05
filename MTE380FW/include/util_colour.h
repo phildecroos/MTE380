@@ -2,20 +2,20 @@
 #include "Adafruit_TCS34725.h"
 #include "pinout.h"
 
-int tcsl_sda = TCSL_SDA;
-int tcsl_scl = TCSL_SCL;
-int tcsr_sda = TCSR_SDA;
-int tcsr_scl = TCSR_SCL;
-int tcs3_sda = TCS3_SDA;
-int tcs3_scl = TCS3_SCL;
+const int TCSL_SDA = PC9;  // Top pin, All I2C
+const int TCSL_SCL = PA8;  // D7
+const int TCSR_SDA = PB9;  // D14
+const int TCSR_SCL = PB8;  // D15
+const int TCS3_SDA = PB3;  // D3
+const int TCS3_SCL = PB10; // D6
 
 Adafruit_TCS34725 tcs_left = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_60X);
 Adafruit_TCS34725 tcs_right = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_60X);
 Adafruit_TCS34725 tcs_three = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_60X);
 
-TwoWire Wire1(tcsl_sda, tcsl_scl);
-TwoWire Wire2(tcsr_sda, tcsr_scl);
-TwoWire Wire3(tcs3_sda, tcs3_scl);
+TwoWire Wire1(TCSL_SDA, TCSL_SCL);
+TwoWire Wire2(TCSR_SDA, TCSR_SCL);
+TwoWire Wire3(TCS3_SDA, TCS3_SCL);
 
 class ColourReading
 {

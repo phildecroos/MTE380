@@ -15,7 +15,7 @@ void shift(bool* arr, int len)
   }
 }
 
-bool checkAll(bool* arr, int len)
+bool check_all(bool* arr, int len)
 {
   bool stop = true;
   for (int i = 0; i < len; i++)

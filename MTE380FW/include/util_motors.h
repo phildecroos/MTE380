@@ -6,18 +6,18 @@
 #define R_FWD HIGH
 #define R_REV LOW
 
+const int MOTOR_MODE = PB5;   // D4, MODE
+const int MOTOR_ENA_L = PC7;  // D9, ENB (PWM)
+const int MOTOR_DIR_L = PA9;  // D8, INB
+const int MOTOR_ENA_R = PA7;  // D11, ENA (PWM)
+const int MOTOR_DIR_R = PA10; // D2, INA
+
 enum drive_gears
 {
   forward = 0,
   reverse = 1,
   inplace = 2
 };
-
-int mode = MOTOR_MODE;
-int ena_l = MOTOR_ENA_L;
-int dir_l = MOTOR_DIR_L;
-int ena_r = MOTOR_ENA_R;
-int dir_r = MOTOR_DIR_R;
 
 float fwd_scale_up = 0.0;
 float fwd_scale_dn = 75.0;
@@ -31,26 +31,26 @@ const float R_BUFF = 1.0;
 
 void setup_motors()
 {
-  pinMode(mode, OUTPUT);
-  pinMode(ena_l, OUTPUT);
-  pinMode(dir_l, OUTPUT);
-  pinMode(ena_r, OUTPUT);
-  pinMode(dir_r, OUTPUT);
+  pinMode(MOTOR_MODE, OUTPUT);
+  pinMode(MOTOR_ENA_L, OUTPUT);
+  pinMode(MOTOR_ENA_R, OUTPUT);
+  pinMode(MOTOR_DIR_L, OUTPUT);
+  pinMode(MOTOR_DIR_R, OUTPUT);
 
-  digitalWrite(mode, HIGH);
-  analogWrite(ena_l, 0);
-  analogWrite(ena_r, 0);
-  digitalWrite(dir_l, LOW);
-  digitalWrite(dir_r, LOW);
+  digitalWrite(MOTOR_MODE, HIGH);
+  analogWrite(MOTOR_ENA_L, 0);
+  analogWrite(MOTOR_ENA_R, 0);
+  digitalWrite(MOTOR_DIR_R, LOW);
+  digitalWrite(MOTOR_DIR_R, LOW);
 }
 
 void shutdown_motors()
 {
-  digitalWrite(mode, LOW);
-  analogWrite(ena_l, 0);
-  analogWrite(ena_r, 0);
-  digitalWrite(dir_l, LOW);
-  digitalWrite(dir_r, LOW);
+  digitalWrite(MOTOR_MODE, LOW);
+  analogWrite(MOTOR_ENA_L, 0);
+  analogWrite(MOTOR_ENA_R, 0);
+  digitalWrite(MOTOR_DIR_L, LOW);
+  digitalWrite(MOTOR_DIR_R, LOW);
 }
 
 void drive_motors(int gear, float steer, int speed)
@@ -99,14 +99,14 @@ void drive_motors(int gear, float steer, int speed)
   r_speed = clamp(r_speed, -255, 255);
 
   if (l_speed >= 0)
-    digitalWrite(dir_l, L_FWD);
+    digitalWrite(MOTOR_DIR_L, L_FWD);
   else
-    digitalWrite(dir_l, L_REV);
+    digitalWrite(MOTOR_DIR_L, L_REV);
   if (r_speed >= 0)
-    digitalWrite(dir_r, R_FWD);
+    digitalWrite(MOTOR_DIR_R, R_FWD);
   else
-    digitalWrite(dir_r, R_REV);
+    digitalWrite(MOTOR_DIR_R, R_REV);
 
-  analogWrite(ena_l, abs(l_speed));
-  analogWrite(ena_r, abs(r_speed));
+  analogWrite(MOTOR_ENA_L, abs(l_speed));
+  analogWrite(MOTOR_ENA_R, abs(r_speed));
 }

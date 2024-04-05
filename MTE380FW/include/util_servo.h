@@ -2,7 +2,8 @@
 #include <Servo.h>
 #include "pinout.h"
 
-int pin = SERVO;
+const int SERVO = PB6; // D10, PWM
+
 const int DOWN = 80;
 const int UP = 0;
 
@@ -10,7 +11,7 @@ Servo gate;
 
 void setup_servo()
 {
-  gate.attach(pin);
+  gate.attach(SERVO);
   gate.write(UP);
 }
 

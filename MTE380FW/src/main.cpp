@@ -11,7 +11,8 @@ enum lf_exit_cases
   returned = 2,
   returnll = 3,
   returnlr = 4,
-  returnl3 = 5
+  returnl3 = 5,
+  waittime = 6
 };
 
 const float G_RED_R = 120.0; // calibrated green readings for red tape and wood
@@ -31,7 +32,7 @@ const float B_SAFEZONE_3 = 300.0;
 const float G_START_R = 150.0; // green threshold for both sensors to see tape at start
 const float G_START_L = 150.0;
 
-bool checkExit(int exit_case, ColourReading col_in)
+bool check_exit(int exit_case, ColourReading col_in)
 {
   return (
      ((exit_case == bullseye) && (col_in.b_l > B_BULLSEYE_L) && (col_in.b_r > B_BULLSEYE_R) && (col_in.b_3 > B_BULLSEYE_3))
@@ -43,28 +44,27 @@ bool checkExit(int exit_case, ColourReading col_in)
   );
 }
 
-void waitUntil(int exit_case, int exit_samples)
+void wait_until(int exit_case, int exit_samples)
 {
   bool prev[exit_samples] = {0};
   while (1)
   {
     shift(prev, exit_samples);
-    prev[0] = checkExit(exit_case, read_colour());
-    if (checkAll(prev, exit_samples))
+    prev[0] = check_exit(exit_case, read_colour());
+    if (check_all(prev, exit_samples))
       break;
   }
 }
 
-float followAlgorithm(int exit_case, ColourReading col_in)
+float follow_algorithm(int exit_case, float Kp, ColourReading col_in)
 {
-  if (checkExit(exit_case, col_in))
-    return 2;
+  if (check_exit(exit_case, col_in))
+    return 2.0;
 
   float L_error = clamp(((col_in.g_l - G_RED_L) / (G_WOOD_L - G_RED_L)), 0.0, 1.0);
   float R_error = clamp(((col_in.g_r - G_RED_R) / (G_WOOD_R - G_RED_R)), 0.0, 1.0);
   float E = clamp((L_error - R_error), -1.0, 1.0);
 
-  float Kp = 2.0;                       // reliable 2.0
   float steering = Kp * pow(abs(E), 4); // reliable pow 4
 
   if (E < 0)
@@ -72,41 +72,56 @@ float followAlgorithm(int exit_case, ColourReading col_in)
   return clamp(steering, -1.0, 1.0);
 }
 
-void lineFollow(int speed, int exit_case, int exit_samples)
+void line_follow(int speed, float Kp, int exit_case, int exit_samples)
 {
-  bool prev[exit_samples] = {0};
-  while (1)
+  if (exit_case == waittime)
   {
-    shift(prev, exit_samples);
+    for (int i = 0; i < exit_samples; i++)
+    {
+      drive_motors(forward, follow_algorithm(exit_case, Kp, read_colour()), speed);
+    }
+  }
+  else
+  {
+    bool prev[exit_samples] = {0};
+    while (1)
+    {
+      shift(prev, exit_samples);
 
-    float steering = followAlgorithm(exit_case, read_colour());
-    if (steering != 2)
-      drive_motors(forward, steering, speed);
-    prev[0] = (steering == 2);
+      float steering = follow_algorithm(exit_case, Kp, read_colour());
+      if (steering != 2.0)
+        drive_motors(forward, steering, speed);
+      prev[0] = (steering == 2.0);
 
-    if (checkAll(prev, exit_samples))
-      break;
+      if (check_all(prev, exit_samples))
+        break;
+    }
   }
 }
 
-void pickUp()
+void pick_up()
 {
   drive_motors(inplace, 1.0, 50);
   delay(100);
 
   move_servo(DOWN);
   drive_motors(forward, 0.0, 50);
-  delay(300);
-
-  drive_motors(inplace, 1.0, 75);
-  delay(750);
-  waitUntil(returnl3, 3);
   delay(200);
+
+  drive_motors(forward, 0.0, 0);
+  delay(100);
+
+  drive_motors(inplace, 1.0, 100);
+  delay(700);
+  wait_until(returnll, 3);
+
+  drive_motors(inplace, -1.0, 100);
+  delay(250);
 
   drive_motors(forward, 0.0, 0);
 }
 
-void dropOff()
+void drop_off()
 {
   drive_motors(inplace, 1.0, 50);
   delay(300);
@@ -114,15 +129,15 @@ void dropOff()
   drive_motors(forward, 0.0, 50);
   delay(700);
 
-  drive_motors(reverse, 0.1, 50);
+  drive_motors(reverse, 0.2, 50);
   move_servo(UP);
   delay(2300);
 
   drive_motors(forward, 1.0, 100);
-  waitUntil(returnll, 3);
+  wait_until(returnll, 3);
 
   drive_motors(forward, -1.0, 100);
-  waitUntil(returnlr, 3);
+  wait_until(returnlr, 3);
 
   drive_motors(forward, 0.0, 0);
 }
@@ -135,7 +150,7 @@ void setup()
   setup_servo();
   if (!setup_colour())
   {
-    Serial.println("ERROR: TCS not found");
+    Serial.println("TCS not found");
     while (1);
   }
   Serial.println("Setup complete");
@@ -143,16 +158,24 @@ void setup()
 
 void loop()
 {
+  Serial.println("Line following for the first straight");
+  line_follow(255, 1.1, waittime, 240); // ~71 exit_samples/second, reliable 255, 1.1
+  Serial.println("Line following for the first turn");
+  line_follow(125, 2.0, waittime, 230); // reliable 125, 2.0 everywhere
+  Serial.println("Line following for the second straight");
+  line_follow(255, 1.1, waittime, 180);
   Serial.println("Line following to the bullseye");
-  lineFollow(125, bullseye, 1); // reliable 125
+  line_follow(125, 2.0, bullseye, 1);
   Serial.println("Picking up minifigure");
-  pickUp();
+  pick_up();
+  Serial.println("Line following to get back to the line");
+  line_follow(110, 2.0, waittime, 50);
   Serial.println("Line following to the safe zone");
-  lineFollow(125, safezone, 3);
+  line_follow(125, 2.0, safezone, 3);
   Serial.println("Dropping off minifigure");
-  dropOff();
+  drop_off();
   Serial.println("Line following back to start");
-  lineFollow(125, returned, 3);
+  line_follow(125, 2.0, returned, 3);
 
   Serial.println("Shutting down...");
   shutdown_motors();
